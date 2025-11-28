@@ -1,0 +1,204 @@
+# Example: Sample gRPC services that work with ProtoDiff
+# This example shows complete deployment of two test gRPC servers (Go and Java)
+
+---
+# Namespace for test services
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: grpc-test
+
+---
+# Go gRPC Server - Greeter Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: grpc-server-go
+  namespace: grpc-test
+  labels:
+    app: grpc-server-go
+spec:
+  type: ClusterIP
+  selector:
+    app: grpc-server-go
+  ports:
+  - port: 9090
+    targetPort: 9090
+    protocol: TCP
+    name: grpc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-server-go
+  namespace: grpc-test
+  labels:
+    app: grpc-server-go
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc-server-go
+  template:
+    metadata:
+      labels:
+        app: grpc-server-go
+        grpc-service: "true"  # REQUIRED: This label enables ProtoDiff discovery
+    spec:
+      containers:
+      - name: server
+        image: grpc-server-go:latest
+        imagePullPolicy: Never  # For local testing with minikube/kind
+        ports:
+        - containerPort: 9090
+          name: grpc
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "9090"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "nc -z localhost 9090"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "nc -z localhost 9090"
+          initialDelaySeconds: 3
+          periodSeconds: 5
+
+---
+# Java gRPC Server - User Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: grpc-server-java
+  namespace: grpc-test
+  labels:
+    app: grpc-server-java
+spec:
+  type: ClusterIP
+  selector:
+    app: grpc-server-java
+  ports:
+  - port: 9091
+    targetPort: 9091
+    protocol: TCP
+    name: grpc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-server-java
+  namespace: grpc-test
+  labels:
+    app: grpc-server-java
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc-server-java
+  template:
+    metadata:
+      labels:
+        app: grpc-server-java
+        grpc-service: "true"  # REQUIRED: This label enables ProtoDiff discovery
+    spec:
+      containers:
+      - name: server
+        image: grpc-server-java:latest
+        imagePullPolicy: Never  # For local testing with minikube/kind
+        ports:
+        - containerPort: 9091
+          name: grpc
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "9091"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "nc -z localhost 9091"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "nc -z localhost 9091"
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# Usage Instructions:
+#
+# 1. Build both Docker images:
+#    cd ../grpc-server-go && docker build -t grpc-server-go:latest .
+#    cd ../grpc-server-java && docker build -t grpc-server-java:latest .
+#
+# 2. If using minikube, load images:
+#    minikube image load grpc-server-go:latest
+#    minikube image load grpc-server-java:latest
+#
+# 3. If using kind, load images:
+#    kind load docker-image grpc-server-go:latest
+#    kind load docker-image grpc-server-java:latest
+#
+# 4. Deploy services:
+#    kubectl apply -f sample-grpc-service.yaml
+#
+# 5. Verify pods are running:
+#    kubectl get pods -n grpc-test -l grpc-service=true
+#
+# 6. Test with grpcurl:
+#    # Port-forward Go server
+#    kubectl port-forward -n grpc-test svc/grpc-server-go 9090:9090
+#    grpcurl -plaintext localhost:9090 list
+#    grpcurl -plaintext -d '{"name": "World"}' localhost:9090 greeter.Greeter/SayHello
+#
+#    # Port-forward Java server
+#    kubectl port-forward -n grpc-test svc/grpc-server-java 9091:9091
+#    grpcurl -plaintext localhost:9091 list
+#    grpcurl -plaintext -d '{"user_id": 1}' localhost:9091 user.UserService/GetUser
+#
+# 7. Update ProtoDiff ConfigMap to add these services:
+#    kubectl edit configmap protodiff-mapping -n protodiff-system
+#
+#    Add these entries in data section:
+#      grpc-server-go: "buf.build/example/greeter"
+#      grpc-server-java: "buf.build/example/user"
+#
+# 8. Check ProtoDiff dashboard:
+#    kubectl port-forward -n protodiff-system svc/protodiff 8080:80
+#    open http://localhost:8080
+#
+# Notes:
+# - Both servers have gRPC reflection enabled (required for ProtoDiff)
+# - Both are labeled with grpc-service=true for automatic discovery
+# - Go server uses port 9090, Java server uses port 9091
+# - Images use imagePullPolicy: Never for local testing

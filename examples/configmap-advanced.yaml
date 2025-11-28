@@ -1,0 +1,55 @@
+# Example: Advanced ConfigMap configuration for ProtoDiff
+# This shows different mapping strategies for various service naming patterns
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: protodiff-mapping
+  namespace: protodiff-system
+  labels:
+    app.kubernetes.io/name: protodiff
+    app.kubernetes.io/component: config
+data:
+  # Simple service names
+  user-service: "buf.build/acme/user"
+  order-service: "buf.build/acme/order"
+  payment-service: "buf.build/acme/payment"
+
+  # Services with version prefixes
+  user-service-v1: "buf.build/acme/user-v1"
+  user-service-v2: "buf.build/acme/user-v2"
+
+  # Services from different organizations
+  notification-service: "buf.build/messaging/notification"
+  email-service: "buf.build/messaging/email"
+
+  # Internal vs external services
+  internal-auth: "buf.build/internal/auth"
+  public-api: "buf.build/external/public-api"
+
+  # Multi-tenant services
+  tenant-a-inventory: "buf.build/tenants/tenant-a/inventory"
+  tenant-b-inventory: "buf.build/tenants/tenant-b/inventory"
+
+---
+# Alternative: Use DEFAULT_BSR_TEMPLATE for consistent naming
+# If your services follow a pattern, use environment variable instead:
+#
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: protodiff
+#   namespace: protodiff-system
+# spec:
+#   template:
+#     spec:
+#       containers:
+#         - name: protodiff
+#           env:
+#             - name: DEFAULT_BSR_TEMPLATE
+#               value: "buf.build/acme/{service}"
+#
+# With this template:
+# - "user-service" → "buf.build/acme/user-service"
+# - "order-service" → "buf.build/acme/order-service"
+# - etc.
