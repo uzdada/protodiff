@@ -1,0 +1,113 @@
+package k8s
+
+import (
+	"context"
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+)
+
+const (
+	// GRPCServiceLabel is the label used to identify gRPC-enabled pods
+	GRPCServiceLabel = "grpc-service"
+	// ServiceNameLabel is the label containing the logical service name
+	ServiceNameLabel = "app"
+	// DefaultGRPCPort is the default port for gRPC reflection
+	DefaultGRPCPort = 9090
+)
+
+// Client provides Kubernetes API operations
+type Client struct {
+	clientset *kubernetes.Clientset
+}
+
+// NewClient creates a new Kubernetes client using in-cluster configuration
+func NewClient() (*Client, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create in-cluster config: %w", err)
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kubernetes clientset: %w", err)
+	}
+
+	return &Client{
+		clientset: clientset,
+	}, nil
+}
+
+// PodInfo contains information about a discovered gRPC pod
+type PodInfo struct {
+	Name        string
+	Namespace   string
+	ServiceName string
+	IP          string
+	GRPCPort    int32
+}
+
+// DiscoverGRPCPods finds all pods labeled with grpc-service=true
+func (c *Client) DiscoverGRPCPods(ctx context.Context) ([]PodInfo, error) {
+	pods, err := c.clientset.CoreV1().Pods("").List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=true", GRPCServiceLabel),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list pods: %w", err)
+	}
+
+	var podInfos []PodInfo
+	for _, pod := range pods.Items {
+		// Skip pods that are not running
+		if pod.Status.Phase != corev1.PodRunning {
+			continue
+		}
+
+		// Extract service name from labels
+		serviceName := pod.Labels[ServiceNameLabel]
+		if serviceName == "" {
+			serviceName = "unknown"
+		}
+
+		// Determine gRPC port (default to 9090)
+		grpcPort := int32(DefaultGRPCPort)
+
+		podInfos = append(podInfos, PodInfo{
+			Name:        pod.Name,
+			Namespace:   pod.Namespace,
+			ServiceName: serviceName,
+			IP:          pod.Status.PodIP,
+			GRPCPort:    grpcPort,
+		})
+	}
+
+	return podInfos, nil
+}
+
+// GetConfigMap retrieves a ConfigMap from the specified namespace
+func (c *Client) GetConfigMap(ctx context.Context, namespace, name string) (*corev1.ConfigMap, error) {
+	cm, err := c.clientset.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get configmap %s/%s: %w", namespace, name, err)
+	}
+	return cm, nil
+}
+
+// LoadServiceMappings loads service-to-BSR mappings from a ConfigMap
+func (c *Client) LoadServiceMappings(ctx context.Context, namespace, configMapName string) (map[string]string, error) {
+	cm, err := c.GetConfigMap(ctx, namespace, configMapName)
+	if err != nil {
+		return nil, err
+	}
+
+	// The ConfigMap data should have keys as service names and values as BSR modules
+	mappings := make(map[string]string)
+	for serviceName, bsrModule := range cm.Data {
+		mappings[serviceName] = bsrModule
+	}
+
+	return mappings, nil
+}
