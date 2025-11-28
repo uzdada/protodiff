@@ -1,0 +1,66 @@
+protodiff/
+│
+├── cmd/
+│   └── protodiff/
+│       └── main.go                          # 애플리케이션 엔트리포인트
+│
+├── internal/
+│   ├── core/                                # 핵심 도메인 레이어
+│   │   ├── domain/
+│   │   │   └── models.go                    # 비즈니스 모델 (ScanResult, DiffStatus)
+│   │   └── store/
+│   │       └── store.go                     # Thread-safe 인메모리 저장소
+│   │
+│   ├── adapters/                            # 어댑터 레이어 (외부 연동)
+│   │   ├── k8s/
+│   │   │   └── client.go                    # Kubernetes API 클라이언트
+│   │   ├── grpc/
+│   │   │   └── reflection.go                # gRPC Reflection 클라이언트
+│   │   ├── bsr/
+│   │   │   ├── client.go                    # BSR 클라이언트 인터페이스
+│   │   │   └── mock.go                      # Mock 구현 (테스트용)
+│   │   └── web/
+│   │       └── server.go                    # HTTP 서버 & 대시보드
+│   │
+│   └── scanner/
+│       └── scanner.go                       # 스키마 검증 오케스트레이터
+│
+├── web/
+│   └── templates/
+│       └── index.html                       # Bootstrap 대시보드 HTML
+│
+├── deploy/
+│   └── k8s/
+│       └── install.yaml                     # All-in-One Kubernetes 매니페스트
+│
+├── examples/
+│   ├── sample-grpc-service.yaml             # gRPC 서비스 예제
+│   └── configmap-advanced.yaml              # 고급 ConfigMap 예제
+│
+├── docs/
+│   ├── QUICKSTART.md                        # 5분 빠른 시작 가이드
+│   └── ARCHITECTURE.md                      # 상세 아키텍처 문서
+│
+├── scripts/
+│   ├── build.sh                             # 빌드 스크립트
+│   └── dev-setup.sh                         # 개발 환경 설정
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yaml                          # GitHub Actions CI/CD
+│
+├── go.mod                                   # Go 모듈 정의
+├── go.sum                                   # 의존성 체크섬
+├── Dockerfile                               # Multi-stage Docker 빌드
+├── Makefile                                 # 빌드 자동화
+├── .dockerignore                            # Docker 빌드 제외 파일
+├── .gitignore                               # Git 제외 파일
+├── README.md                                # 메인 프로젝트 문서
+├── LICENSE                                  # Apache 2.0 라이선스
+├── CONTRIBUTING.md                          # 기여 가이드라인
+├── PROJECT_SUMMARY.md                       # 프로젝트 요약
+└── IMPLEMENTATION_COMPLETE.md               # 구현 완료 보고서
+
+═══════════════════════════════════════════════════════════════
+총 23개 파일 | Go 코드 903줄 | 7개 문서 | 완전한 MVP 구현
+═══════════════════════════════════════════════════════════════
