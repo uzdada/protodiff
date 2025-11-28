@@ -1,0 +1,32 @@
+# Ignore development files
+.git
+.gitignore
+*.md
+LICENSE
+
+# Ignore build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore test files
+*_test.go
+testdata/
+
+# Ignore deployment files
+deploy/
+*.yaml
+*.yml
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore temporary files
+tmp/
+temp/
+*.tmp
