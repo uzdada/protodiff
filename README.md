@@ -1,5 +1,10 @@
 # ProtoDiff
 
+[![CI](https://github.com/uzdada/protodiff/actions/workflows/ci.yaml/badge.svg)](https://github.com/uzdada/protodiff/actions/workflows/ci.yaml)
+[![Docker Hub](https://img.shields.io/docker/v/uzdada/protodiff?label=docker&logo=docker)](https://hub.docker.com/r/uzdada/protodiff)
+[![Docker Pulls](https://img.shields.io/docker/pulls/uzdada/protodiff)](https://hub.docker.com/r/uzdada/protodiff)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 **Kubernetes-native gRPC Schema Drift Detection Tool**
 
 [English](#english) | [한국어](#korean)
