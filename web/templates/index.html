@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProtoDiff - gRPC Schema Drift Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .stats-card {
+            border-left: 4px solid;
+            transition: transform 0.2s;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-card.success {
+            border-left-color: #28a745;
+        }
+        .stats-card.danger {
+            border-left-color: #dc3545;
+        }
+        .stats-card.warning {
+            border-left-color: #ffc107;
+        }
+        .badge-sync {
+            background-color: #28a745;
+        }
+        .badge-mismatch {
+            background-color: #dc3545;
+        }
+        .badge-unknown {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .refresh-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+        }
+        .auto-refresh-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1 class="display-4">🔍 ProtoDiff</h1>
+            <p class="lead">Kubernetes-native gRPC Schema Drift Detection</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card stats-card success">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">In Sync</h5>
+                        <h2 class="mb-0">{{.Stats.SyncCount}}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stats-card danger">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">Mismatched</h5>
+                        <h2 class="mb-0">{{.Stats.MismatchCount}}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stats-card warning">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">Unknown</h5>
+                        <h2 class="mb-0">{{.Stats.UnknownCount}}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="table-container">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Service</th>
+                        <th>Pod</th>
+                        <th>Namespace</th>
+                        <th>BSR Module</th>
+                        <th>Status</th>
+                        <th>Last Checked</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{if .Results}}
+                        {{range .Results}}
+                        <tr>
+                            <td><strong>{{.ServiceName}}</strong></td>
+                            <td><code>{{.PodName}}</code></td>
+                            <td>{{.PodNamespace}}</td>
+                            <td><small class="text-muted">{{.BSRModule}}</small></td>
+                            <td>
+                                {{if eq .Status "SYNC"}}
+                                    <span class="badge badge-sync">✓ SYNC</span>
+                                {{else if eq .Status "MISMATCH"}}
+                                    <span class="badge badge-mismatch">✗ MISMATCH</span>
+                                {{else}}
+                                    <span class="badge badge-unknown">? UNKNOWN</span>
+                                {{end}}
+                            </td>
+                            <td><small>{{.LastChecked.Format "15:04:05"}}</small></td>
+                            <td><small class="text-muted">{{.Message}}</small></td>
+                        </tr>
+                        {{end}}
+                    {{else}}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <p class="mb-0">No gRPC services discovered yet.</p>
+                                <small>Make sure your pods are labeled with <code>grpc-service=true</code></small>
+                            </td>
+                        </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="mt-4 text-center text-muted">
+            <small>
+                Last updated: {{.LastUpdate}} |
+                Total Pods: {{.Stats.TotalCount}} |
+                <a href="https://github.com/uzdada/protodiff" target="_blank" class="text-decoration-none">GitHub</a>
+            </small>
+        </div>
+    </div>
+
+    <!-- Auto-refresh indicator -->
+    <div class="auto-refresh-indicator">
+        <span class="badge bg-secondary">Auto-refresh: 30s</span>
+    </div>
+
+    <!-- Refresh Button -->
+    <button class="btn btn-primary btn-lg refresh-btn" onclick="location.reload()">
+        🔄 Refresh
+    </button>
+
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
