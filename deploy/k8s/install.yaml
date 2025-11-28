@@ -93,7 +93,7 @@ spec:
       serviceAccountName: protodiff
       containers:
         - name: protodiff
-          image: uzdada/protodiff:latest
+          image: wooojin2da/protodiff:latest
           imagePullPolicy: Always
           ports:
             - name: http

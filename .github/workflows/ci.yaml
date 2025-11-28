@@ -96,7 +96,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: uzdada/protodiff
+          images: wooojin2da/protodiff
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-

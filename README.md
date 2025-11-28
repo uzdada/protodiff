@@ -1,8 +1,8 @@
 # ProtoDiff
 
 [![CI](https://github.com/uzdada/protodiff/actions/workflows/ci.yaml/badge.svg)](https://github.com/uzdada/protodiff/actions/workflows/ci.yaml)
-[![Docker Hub](https://img.shields.io/docker/v/uzdada/protodiff?label=docker&logo=docker)](https://hub.docker.com/r/uzdada/protodiff)
-[![Docker Pulls](https://img.shields.io/docker/pulls/uzdada/protodiff)](https://hub.docker.com/r/uzdada/protodiff)
+[![Docker Hub](https://img.shields.io/docker/v/wooojin2da/protodiff?label=docker&logo=docker)](https://hub.docker.com/r/uzdada/protodiff)
+[![Docker Pulls](https://img.shields.io/docker/pulls/wooojin2da/protodiff)](https://hub.docker.com/r/wooojin2da/protodiff)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 **Kubernetes-native gRPC Schema Drift Detection Tool**
@@ -220,8 +220,8 @@ Set up the following GitHub Secrets:
    - `DOCKERHUB_TOKEN`: Docker Hub access token (create at https://hub.docker.com/settings/security)
 
 **Docker Image Tags:**
-- `uzdada/protodiff:latest` - Latest build from main branch
-- `uzdada/protodiff:main-<sha>` - Specific commit SHA
+- `wooojin2da/protodiff:latest` - Latest build from main branch
+- `wooojin2da/protodiff:main-<sha>` - Specific commit SHA
 
 ### Troubleshooting
 
