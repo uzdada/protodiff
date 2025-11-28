@@ -17,7 +17,7 @@ go.work
 # Build artifacts
 /bin/
 /dist/
-protodiff
+/protodiff
 
 # IDE files
 .vscode/
