@@ -1,0 +1,185 @@
+---
+# Namespace for ProtoDiff system
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: protodiff-system
+  labels:
+    app.kubernetes.io/name: protodiff
+    app.kubernetes.io/component: monitoring
+
+---
+# ServiceAccount for ProtoDiff
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: protodiff
+  namespace: protodiff-system
+  labels:
+    app.kubernetes.io/name: protodiff
+
+---
+# ClusterRole with permissions to discover pods and read ConfigMaps
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: protodiff
+  labels:
+    app.kubernetes.io/name: protodiff
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+
+---
+# ClusterRoleBinding to grant permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: protodiff
+  labels:
+    app.kubernetes.io/name: protodiff
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: protodiff
+subjects:
+  - kind: ServiceAccount
+    name: protodiff
+    namespace: protodiff-system
+
+---
+# ConfigMap containing service-to-BSR module mappings
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: protodiff-mapping
+  namespace: protodiff-system
+  labels:
+    app.kubernetes.io/name: protodiff
+    app.kubernetes.io/component: config
+data:
+  # Map service names to BSR modules
+  # Format: service-name: buf.build/org/module
+  # These are the actual deployed test services
+  grpc-server-go: "buf.build/example/greeter"
+  grpc-server-java: "buf.build/example/user"
+
+---
+# Secret containing BSR authentication token
+# IMPORTANT: Replace 'YOUR_BSR_TOKEN_HERE' with your actual token from https://buf.build/settings/user
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bsr-token
+  namespace: protodiff-system
+  labels:
+    app.kubernetes.io/name: protodiff
+    app.kubernetes.io/component: config
+type: Opaque
+stringData:
+  # Get your token from: https://buf.build/settings/user
+  # Click "Create Token" and paste the value here
+  token: "YOUR_BSR_TOKEN_HERE"
+
+---
+# Deployment for ProtoDiff
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: protodiff
+  namespace: protodiff-system
+  labels:
+    app.kubernetes.io/name: protodiff
+    app.kubernetes.io/component: monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: protodiff
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: protodiff
+    spec:
+      serviceAccountName: protodiff
+      containers:
+        - name: protodiff
+          image: protodiff:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            # Kubernetes configuration
+            - name: CONFIGMAP_NAMESPACE
+              value: "protodiff-system"
+            - name: CONFIGMAP_NAME
+              value: "protodiff-mapping"
+
+            # BSR (Buf Schema Registry) configuration
+            - name: BSR_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: bsr-token
+                  key: token
+            - name: USE_MOCK_BSR
+              value: "false"  # Set to "true" for testing without BSR
+
+            # Application configuration
+            - name: DEFAULT_BSR_TEMPLATE
+              value: "buf.build/acme/{service}"
+            - name: WEB_ADDR
+              value: ":8080"
+            - name: SCAN_INTERVAL
+              value: "30s"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+---
+# Service to expose ProtoDiff dashboard
+apiVersion: v1
+kind: Service
+metadata:
+  name: protodiff
+  namespace: protodiff-system
+  labels:
+    app.kubernetes.io/name: protodiff
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: protodiff
