@@ -10,7 +10,7 @@
 
 ### Overview
 
-ProtoDiff is a monitoring agent that automatically detects schema mismatches between your running gRPC services and the Buf Schema Registry (BSR). It provides a visual dashboard to help teams maintain schema consistency across their microservices architecture.
+ProtoDiff is a Kubernetes-native monitoring tool that runs inside your cluster to automatically detect schema drift between live gRPC services and the Buf Schema Registry (BSR). Deployed as a lightweight agent in your Kubernetes environment, it continuously validates schema consistency across your microservices without requiring any changes to your existing services.
 
 ### Key Features
 
@@ -37,37 +37,44 @@ ProtoDiff is a monitoring agent that automatically detects schema mismatches bet
 
 #### 1. Get Your BSR Token
 
-Visit https://buf.build/settings/user and create an API token. You'll need this in the next step.
+Visit https://buf.build/settings/user and create an API token. Keep it secure - you'll need it in step 3.
 
-#### 2. Configure BSR Token
+#### 2. Download and Configure Service Mappings
 
-Before deploying, download and edit the install manifest:
+Download the installation manifest:
 
 ```bash
-# Download the manifest
 curl -O https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.yaml
-
-# Edit the file and replace 'YOUR_BSR_TOKEN_HERE' with your actual token
-# Look for the Secret named 'bsr-token' around line 73-86
-vi deploy/k8s/install.yaml
 ```
 
-Find this section and replace the token:
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: bsr-token
-  namespace: protodiff-system
-stringData:
-  token: "YOUR_BSR_TOKEN_HERE"  # Replace this with your actual token
-```
-
-#### 3. Deploy ProtoDiff
+Edit the ConfigMap section to map your services to BSR modules:
 
 ```bash
-kubectl apply -f deploy/k8s/install.yaml
+vi install.yaml  # or use your preferred editor
+```
+
+**Configure Service Mappings** (around line 69-71):
+```yaml
+data:
+  user-service: "buf.build/acme/user"        # Replace with your services
+  order-service: "buf.build/acme/order"      # Add more as needed
+  payment-service: "buf.build/acme/payment"
+```
+
+#### 3. Deploy
+
+Apply the manifest:
+
+```bash
+kubectl apply -f install.yaml
+```
+
+**Create BSR Token Secret** (do NOT commit this to Git):
+
+```bash
+kubectl create secret generic bsr-token \
+  --from-literal=token=YOUR_BSR_TOKEN_HERE \
+  -n protodiff-system
 ```
 
 Verify deployment:
@@ -76,22 +83,17 @@ Verify deployment:
 kubectl get pods -n protodiff-system
 ```
 
-#### 4. Configure Service Mappings
+**Security Note**: Never commit the Secret creation command or token to Git. Use environment variables, secret management tools (Sealed Secrets, External Secrets Operator, Vault), or store it in a `.env` file that's git-ignored.
 
-Edit the ConfigMap to map your services to BSR modules:
+#### Alternative: Automated Installation
+
+For quick testing, use the interactive installation script:
 
 ```bash
-kubectl edit configmap protodiff-mapping -n protodiff-system
+curl -sL https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.sh | bash
 ```
 
-```yaml
-data:
-  user-service: "buf.build/acme/user"
-  order-service: "buf.build/acme/order"
-  payment-service: "buf.build/acme/payment"
-```
-
-#### 5. Label Your gRPC Pods
+#### Label Your gRPC Pods
 
 Add the `grpc-service=true` label to your gRPC service pods:
 
@@ -108,26 +110,13 @@ spec:
         grpc-service: "true"  # Required for ProtoDiff discovery
 ```
 
-#### 6. Access the Dashboard
+#### Access the Dashboard
 
 ```bash
 kubectl port-forward -n protodiff-system svc/protodiff 8080:80
 ```
 
 Open your browser to http://localhost:8080
-
-### Alternative: Using Mock Mode (Testing Without BSR)
-
-If you want to test ProtoDiff without a BSR account, you can use mock mode:
-
-```yaml
-# In deploy/k8s/install.yaml, change the USE_MOCK_BSR env variable:
-env:
-  - name: USE_MOCK_BSR
-    value: "true"  # Enable mock mode
-```
-
-Mock mode uses hardcoded sample schemas and doesn't require BSR authentication.
 
 ### Architecture
 
@@ -212,6 +201,23 @@ make fmt           # Format code
 make lint          # Run linter
 ```
 
+#### Docker Hub CI/CD Setup
+
+The project automatically builds and pushes Docker images to Docker Hub when changes are pushed to the main branch.
+
+**For Repository Maintainers:**
+
+Set up the following GitHub Secrets:
+
+1. Go to repository Settings → Secrets and variables → Actions
+2. Add the following secrets:
+   - `DOCKERHUB_USERNAME`: Your Docker Hub username
+   - `DOCKERHUB_TOKEN`: Docker Hub access token (create at https://hub.docker.com/settings/security)
+
+**Docker Image Tags:**
+- `uzdada/protodiff:latest` - Latest build from main branch
+- `uzdada/protodiff:main-<sha>` - Specific commit SHA
+
 ### Troubleshooting
 
 #### No Services Discovered
@@ -259,7 +265,7 @@ This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) fo
 
 ### 개요
 
-ProtoDiff는 실행 중인 gRPC 서비스와 Buf Schema Registry(BSR) 간의 스키마 불일치를 자동으로 감지하는 모니터링 에이전트입니다. 마이크로서비스 아키텍처 전반에 걸쳐 스키마 일관성을 유지하도록 돕는 시각적 대시보드를 제공합니다.
+ProtoDiff는 Kubernetes 클러스터 내부에서 실행되는 네이티브 모니터링 도구로, 실행 중인 gRPC 서비스와 Buf Schema Registry(BSR) 간의 스키마 드리프트를 자동으로 감지합니다. Kubernetes 환경에 경량 에이전트로 배포되어 기존 서비스의 변경 없이 마이크로서비스 전반의 스키마 일관성을 지속적으로 검증합니다.
 
 ### 주요 기능
 
@@ -286,37 +292,44 @@ ProtoDiff는 실행 중인 gRPC 서비스와 Buf Schema Registry(BSR) 간의 스
 
 #### 1. BSR 토큰 발급
 
-https://buf.build/settings/user 에 방문하여 API 토큰을 생성합니다. 다음 단계에서 필요합니다.
+https://buf.build/settings/user 에 방문하여 API 토큰을 생성합니다. 안전하게 보관하세요 - 3단계에서 필요합니다.
 
-#### 2. BSR 토큰 설정
+#### 2. 다운로드 및 서비스 매핑 설정
 
-배포 전에 install manifest를 다운로드하고 편집합니다:
+설치 매니페스트 다운로드:
 
 ```bash
-# 매니페스트 다운로드
 curl -O https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.yaml
-
-# 파일을 편집하고 'YOUR_BSR_TOKEN_HERE'를 실제 토큰으로 교체
-# 'bsr-token'이라는 이름의 Secret을 찾으세요 (약 73-86번째 줄)
-vi deploy/k8s/install.yaml
 ```
 
-이 섹션을 찾아서 토큰을 교체하세요:
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: bsr-token
-  namespace: protodiff-system
-stringData:
-  token: "YOUR_BSR_TOKEN_HERE"  # 실제 토큰으로 교체
-```
-
-#### 3. ProtoDiff 배포
+ConfigMap 섹션을 편집하여 서비스를 BSR 모듈에 매핑:
 
 ```bash
-kubectl apply -f deploy/k8s/install.yaml
+vi install.yaml  # 또는 원하는 에디터 사용
+```
+
+**서비스 매핑 설정** (69-71번째 줄 근처):
+```yaml
+data:
+  user-service: "buf.build/acme/user"        # 실제 서비스로 교체
+  order-service: "buf.build/acme/order"      # 필요한 만큼 추가
+  payment-service: "buf.build/acme/payment"
+```
+
+#### 3. 배포
+
+매니페스트 적용:
+
+```bash
+kubectl apply -f install.yaml
+```
+
+**BSR 토큰 Secret 생성** (Git에 커밋하지 마세요):
+
+```bash
+kubectl create secret generic bsr-token \
+  --from-literal=token=YOUR_BSR_TOKEN_HERE \
+  -n protodiff-system
 ```
 
 배포 확인:
@@ -325,22 +338,17 @@ kubectl apply -f deploy/k8s/install.yaml
 kubectl get pods -n protodiff-system
 ```
 
-#### 4. 서비스 매핑 설정
+**보안 주의사항**: Secret 생성 명령어나 토큰을 Git에 커밋하지 마세요. 환경 변수, 시크릿 관리 도구(Sealed Secrets, External Secrets Operator, Vault)를 사용하거나 `.env` 파일에 저장 후 git-ignore 처리하세요.
 
-ConfigMap을 편집하여 서비스를 BSR 모듈에 매핑:
+#### 대안: 자동 설치
+
+빠른 테스트를 위해 대화형 설치 스크립트 사용:
 
 ```bash
-kubectl edit configmap protodiff-mapping -n protodiff-system
+curl -sL https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.sh | bash
 ```
 
-```yaml
-data:
-  user-service: "buf.build/acme/user"
-  order-service: "buf.build/acme/order"
-  payment-service: "buf.build/acme/payment"
-```
-
-#### 5. gRPC Pod에 레이블 추가
+#### gRPC Pod에 레이블 추가
 
 gRPC 서비스 Pod에 `grpc-service=true` 레이블 추가:
 
@@ -357,26 +365,13 @@ spec:
         grpc-service: "true"  # ProtoDiff 발견에 필요
 ```
 
-#### 6. 대시보드 접속
+#### 대시보드 접속
 
 ```bash
 kubectl port-forward -n protodiff-system svc/protodiff 8080:80
 ```
 
 브라우저에서 http://localhost:8080 열기
-
-### 대안: Mock 모드 사용 (BSR 없이 테스트)
-
-BSR 계정 없이 ProtoDiff를 테스트하려면 mock 모드를 사용할 수 있습니다:
-
-```yaml
-# deploy/k8s/install.yaml에서 USE_MOCK_BSR 환경 변수 변경:
-env:
-  - name: USE_MOCK_BSR
-    value: "true"  # mock 모드 활성화
-```
-
-Mock 모드는 하드코딩된 샘플 스키마를 사용하며 BSR 인증이 필요하지 않습니다.
 
 ### 아키텍처
 

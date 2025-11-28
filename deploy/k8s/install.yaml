@@ -53,6 +53,7 @@ subjects:
 
 ---
 # ConfigMap containing service-to-BSR module mappings
+# IMPORTANT: Edit this section to map your gRPC services to BSR modules
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -62,28 +63,12 @@ metadata:
     app.kubernetes.io/name: protodiff
     app.kubernetes.io/component: config
 data:
-  # Map service names to BSR modules
-  # Format: service-name: buf.build/org/module
-  # These are the actual deployed test services
-  grpc-server-go: "buf.build/example/greeter"
-  grpc-server-java: "buf.build/example/user"
-
----
-# Secret containing BSR authentication token
-# IMPORTANT: Replace 'YOUR_BSR_TOKEN_HERE' with your actual token from https://buf.build/settings/user
-apiVersion: v1
-kind: Secret
-metadata:
-  name: bsr-token
-  namespace: protodiff-system
-  labels:
-    app.kubernetes.io/name: protodiff
-    app.kubernetes.io/component: config
-type: Opaque
-stringData:
-  # Get your token from: https://buf.build/settings/user
-  # Click "Create Token" and paste the value here
-  token: "YOUR_BSR_TOKEN_HERE"
+  # Map your service names to BSR modules
+  # Format: service-name: "buf.build/org/MODULE_NAME"
+  # Replace these examples with your actual services:
+  user-service: "buf.build/acme/user"
+  order-service: "buf.build/acme/order"
+  payment-service: "buf.build/acme/payment"
 
 ---
 # Deployment for ProtoDiff
@@ -108,8 +93,8 @@ spec:
       serviceAccountName: protodiff
       containers:
         - name: protodiff
-          image: protodiff:latest
-          imagePullPolicy: IfNotPresent
+          image: uzdada/protodiff:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
