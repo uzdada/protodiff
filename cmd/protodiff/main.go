@@ -1,3 +1,26 @@
+// Command protodiff monitors gRPC schema drift between live Kubernetes pods
+// and the Buf Schema Registry (BSR).
+//
+// It continuously scans gRPC-enabled pods in a Kubernetes cluster, fetches their
+// schemas via gRPC reflection, compares them against the canonical schemas stored
+// in BSR, and reports any drift through a built-in web dashboard.
+//
+// Configuration is done through environment variables:
+//   - CONFIGMAP_NAMESPACE: Kubernetes namespace for the mapping ConfigMap
+//   - CONFIGMAP_NAME: Name of the ConfigMap containing service-to-BSR mappings
+//   - DEFAULT_BSR_TEMPLATE: Template for auto-generating BSR module paths
+//   - WEB_ADDR: Address for the web dashboard server
+//   - SCAN_INTERVAL: Time duration between scan cycles
+//   - BSR_TOKEN: Authentication token for BSR API access
+//   - USE_MOCK_BSR: Set to "true" to use mock BSR client (for testing)
+//
+// Example usage:
+//
+//	export BSR_TOKEN="your-token-here"
+//	export WEB_ADDR=":18080"
+//	protodiff
+//
+// The web dashboard will be available at http://localhost:18080
 package main
 
 import (

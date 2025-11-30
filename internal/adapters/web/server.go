@@ -1,3 +1,23 @@
+// Package web provides an HTTP server for the ProtoDiff dashboard.
+//
+// The dashboard displays real-time schema drift detection results with a traffic
+// light UI (green=sync, red=mismatch, yellow=unknown). It serves an embedded HTML
+// template and provides both a main dashboard and a health check endpoint.
+//
+// Endpoints:
+//   - GET /: Main dashboard showing all scan results with statistics
+//   - GET /health: Health check endpoint returning {"status":"healthy"}
+//
+// The server reads scan results from the in-memory store and renders them using
+// Go's html/template package with an embedded template file.
+//
+// Example usage:
+//
+//	server, err := web.NewServer(dataStore, ":18080")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	server.Start()
 package web
 
 import (

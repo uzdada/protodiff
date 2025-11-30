@@ -1,3 +1,19 @@
+// Package scanner provides the core orchestration logic for schema drift detection.
+//
+// The scanner continuously discovers gRPC-enabled pods in Kubernetes, fetches their
+// schemas via gRPC reflection, retrieves the canonical schemas from BSR, and compares
+// them to detect drift. Results are stored in-memory and surfaced through the web UI.
+//
+// The main workflow is:
+//  1. Discover pods with grpc-service=true label
+//  2. Load service-to-BSR mappings from ConfigMap
+//  3. For each pod:
+//     - Fetch live schema via gRPC reflection
+//     - Fetch truth schema from BSR
+//     - Compare schemas and detect drift
+//  4. Store results for dashboard display
+//
+// The scanner runs continuously on a configurable interval (default: 30 minutes).
 package scanner
 
 import (

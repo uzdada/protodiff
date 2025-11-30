@@ -1,3 +1,17 @@
+// Package grpc provides a client for fetching schemas from live gRPC services
+// using server reflection.
+//
+// Server reflection (https://github.com/grpc/grpc/blob/master/doc/server-reflection.md)
+// allows gRPC clients to discover service definitions at runtime without needing
+// proto files. This package leverages reflection to fetch schemas from running pods.
+//
+// The ReflectionClient connects to a gRPC server, queries available services,
+// and converts the discovered schema into domain.SchemaDescriptor format.
+//
+// Example usage:
+//
+//	client := grpc.NewReflectionClient()
+//	schema, err := client.FetchSchema(ctx, "10.0.1.5:9090")
 package grpc
 
 import (

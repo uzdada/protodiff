@@ -1,3 +1,14 @@
+// Package config provides centralized application configuration management.
+//
+// Configuration is loaded from environment variables with sensible defaults.
+// All components use the same Config struct to ensure consistency.
+//
+// Environment variables:
+//   - CONFIGMAP_NAMESPACE: Namespace for the Kubernetes ConfigMap (default: "protodiff-system")
+//   - CONFIGMAP_NAME: Name of the ConfigMap with service mappings (default: "protodiff-mapping")
+//   - DEFAULT_BSR_TEMPLATE: Template for BSR module paths like "buf.build/org/{service}"
+//   - WEB_ADDR: Web server address (default: ":18080")
+//   - SCAN_INTERVAL: Duration between scans (default: "30m")
 package config
 
 import (

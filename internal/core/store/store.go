@@ -1,3 +1,21 @@
+// Package store provides thread-safe in-memory storage for scan results.
+//
+// The store maintains a map of scan results keyed by pod identifier
+// (namespace/name). It uses a read-write mutex to ensure safe concurrent
+// access from multiple goroutines.
+//
+// The store supports:
+//   - Setting results (upsert operation)
+//   - Getting a specific result by pod identifier
+//   - Retrieving all results
+//   - Deleting results
+//   - Counting total stored results
+//
+// Example usage:
+//
+//	store := store.New()
+//	store.Set(scanResult)
+//	result, exists := store.Get("default", "my-pod")
 package store
 
 import (

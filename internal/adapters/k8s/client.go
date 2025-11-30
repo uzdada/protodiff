@@ -1,3 +1,20 @@
+// Package k8s provides a Kubernetes client for discovering gRPC pods and
+// loading configuration.
+//
+// This package wraps the official Kubernetes client-go library to provide
+// application-specific operations:
+//   - Discovering pods labeled with grpc-service=true
+//   - Loading service-to-BSR mappings from ConfigMaps
+//   - Retrieving pod network information for gRPC connections
+//
+// The client uses in-cluster configuration when running inside Kubernetes,
+// automatically authenticating via the service account token.
+//
+// Example usage:
+//
+//	client, err := k8s.NewClient()
+//	pods, err := client.DiscoverGRPCPods(ctx)
+//	mappings, err := client.LoadServiceMappings(ctx, "default", "config")
 package k8s
 
 import (

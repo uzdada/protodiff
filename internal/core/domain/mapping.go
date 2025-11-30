@@ -1,3 +1,14 @@
+// Package domain contains the core domain models for ProtoDiff.
+//
+// This package defines the business entities and value objects used throughout
+// the application, following Domain-Driven Design principles:
+//   - ScanResult: Schema validation results for a pod
+//   - SchemaDescriptor: Protobuf schema definitions
+//   - ServiceMappings: Service-to-BSR module mappings
+//   - DiffStatus: Schema comparison status enumeration
+//
+// All types in this package are framework-agnostic and represent pure business
+// logic without dependencies on infrastructure concerns (HTTP, Kubernetes, etc).
 package domain
 
 // ServiceMapping represents the configuration mapping between a service and its BSR module
