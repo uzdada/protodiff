@@ -21,7 +21,7 @@ const (
 	defaultConfigMapNamespace = "protodiff-system"
 	defaultConfigMapName      = "protodiff-mapping"
 	defaultWebAddr            = ":18080"
-	defaultScanInterval       = 30 * time.Second
+	defaultScanInterval       = 30 * time.Minute
 )
 
 func main() {
