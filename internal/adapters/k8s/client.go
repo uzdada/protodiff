@@ -87,9 +87,17 @@ func (c *Client) DiscoverGRPCPods(ctx context.Context) ([]PodInfo, error) {
 	return podInfos, nil
 }
 
-// GetConfigMap retrieves a ConfigMap from the specified namespace
+// GetConfigMap
+/*
+- retrieves a ConfigMap from the specified namespace
+- client means k8s client
+
+*/
 func (c *Client) GetConfigMap(ctx context.Context, namespace, name string) (*corev1.ConfigMap, error) {
-	cm, err := c.clientset.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
+	cm, err := c.clientset.CoreV1().
+		ConfigMaps(namespace).
+		Get(ctx, name, metav1.GetOptions{}) // default value (no options)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get configmap %s/%s: %w", namespace, name, err)
 	}
@@ -103,9 +111,11 @@ func (c *Client) LoadServiceMappings(ctx context.Context, namespace, configMapNa
 		return nil, err
 	}
 
-	// The ConfigMap data should have keys as service names and values as BSR modules
+	var configData map[string]string = cm.Data
+
+	// The ConfigMap data should have keys as service names and values as BSR modules (correctly, bsr module's URL)
 	mappings := make(map[string]string)
-	for serviceName, bsrModule := range cm.Data {
+	for serviceName, bsrModule := range configData {
 		mappings[serviceName] = bsrModule
 	}
 
