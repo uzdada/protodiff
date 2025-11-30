@@ -10,28 +10,21 @@ import (
 	"github.com/uzdada/protodiff/internal/adapters/bsr"
 	"github.com/uzdada/protodiff/internal/adapters/grpc"
 	"github.com/uzdada/protodiff/internal/adapters/k8s"
+	"github.com/uzdada/protodiff/internal/config"
 	"github.com/uzdada/protodiff/internal/core/domain"
 	"github.com/uzdada/protodiff/internal/core/store"
 )
 
 // Scanner orchestrates the schema validation workflow
 type Scanner struct {
-	k8sClient        *k8s.Client
-	grpcClient       *grpc.ReflectionClient
-	bsrClient        bsr.Client
-	store            *store.Store
-	configMapNS      string
-	configMapName    string
-	bsrTemplate      string
-	scanInterval     time.Duration
-}
-
-// Config holds the scanner configuration
-type Config struct {
-	ConfigMapNamespace string
-	ConfigMapName      string
-	BSRTemplate        string
-	ScanInterval       time.Duration
+	k8sClient     *k8s.Client
+	grpcClient    *grpc.ReflectionClient
+	bsrClient     bsr.Client
+	store         *store.Store
+	configMapNS   string
+	configMapName string
+	bsrTemplate   string
+	scanInterval  time.Duration
 }
 
 // NewScanner creates a new scanner instance
@@ -40,17 +33,17 @@ func NewScanner(
 	grpcClient *grpc.ReflectionClient,
 	bsrClient bsr.Client,
 	store *store.Store,
-	config Config,
+	cfg config.Config,
 ) *Scanner {
 	return &Scanner{
 		k8sClient:     k8sClient,
 		grpcClient:    grpcClient,
 		bsrClient:     bsrClient,
 		store:         store,
-		configMapNS:   config.ConfigMapNamespace,
-		configMapName: config.ConfigMapName,
-		bsrTemplate:   config.BSRTemplate,
-		scanInterval:  config.ScanInterval,
+		configMapNS:   cfg.ConfigMapNamespace,
+		configMapName: cfg.ConfigMapName,
+		bsrTemplate:   cfg.BSRTemplate,
+		scanInterval:  cfg.ScanInterval,
 	}
 }
 
@@ -87,7 +80,7 @@ func (s *Scanner) runScan(ctx context.Context) error {
 	mappings, err := s.loadServiceMappings(ctx)
 	if err != nil {
 		log.Printf("Warning: Failed to load ConfigMap: %v", err)
-		mappings = make(map[string]string)
+		mappings = domain.NewServiceMappings(nil) // Empty mappings
 	}
 
 	// Discover gRPC pods
@@ -107,13 +100,13 @@ func (s *Scanner) runScan(ctx context.Context) error {
 	return nil
 }
 
-// loadServiceMappings loads the ConfigMap or returns empty map on error
-func (s *Scanner) loadServiceMappings(ctx context.Context) (map[string]string, error) {
+// loadServiceMappings loads the ConfigMap or returns empty mappings on error
+func (s *Scanner) loadServiceMappings(ctx context.Context) (domain.ServiceMappings, error) {
 	return s.k8sClient.LoadServiceMappings(ctx, s.configMapNS, s.configMapName)
 }
 
 // validatePod validates a single pod's schema against BSR
-func (s *Scanner) validatePod(ctx context.Context, pod k8s.PodInfo, mappings map[string]string) {
+func (s *Scanner) validatePod(ctx context.Context, pod k8s.PodInfo, mappings domain.ServiceMappings) {
 	result := &domain.ScanResult{
 		PodName:      pod.Name,
 		PodNamespace: pod.Namespace,
@@ -167,9 +160,9 @@ func (s *Scanner) validatePod(ctx context.Context, pod k8s.PodInfo, mappings map
 }
 
 // resolveBSRModule determines the BSR module for a service
-func (s *Scanner) resolveBSRModule(serviceName string, mappings map[string]string) string {
+func (s *Scanner) resolveBSRModule(serviceName string, mappings domain.ServiceMappings) string {
 	// Check ConfigMap first
-	if module, exists := mappings[serviceName]; exists {
+	if module, exists := mappings.Get(serviceName); exists {
 		return module
 	}
 

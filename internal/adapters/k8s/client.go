@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/uzdada/protodiff/internal/core/domain"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -105,19 +106,13 @@ func (c *Client) GetConfigMap(ctx context.Context, namespace, name string) (*cor
 }
 
 // LoadServiceMappings loads service-to-BSR mappings from a ConfigMap
-func (c *Client) LoadServiceMappings(ctx context.Context, namespace, configMapName string) (map[string]string, error) {
+func (c *Client) LoadServiceMappings(ctx context.Context, namespace, configMapName string) (domain.ServiceMappings, error) {
 	cm, err := c.GetConfigMap(ctx, namespace, configMapName)
 	if err != nil {
-		return nil, err
+		return domain.ServiceMappings{}, err
 	}
 
-	var configData map[string]string = cm.Data
-
-	// The ConfigMap data should have keys as service names and values as BSR modules (correctly, bsr module's URL)
-	mappings := make(map[string]string)
-	for serviceName, bsrModule := range configData {
-		mappings[serviceName] = bsrModule
-	}
-
-	return mappings, nil
+	// Convert ConfigMap data to domain.ServiceMappings
+	// The ConfigMap data has keys as service names and values as BSR module URLs
+	return domain.NewServiceMappings(cm.Data), nil
 }
