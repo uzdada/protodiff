@@ -194,8 +194,8 @@ spec:
 #      grpc-server-java: "buf.build/example/user"
 #
 # 8. Check ProtoDiff dashboard:
-#    kubectl port-forward -n protodiff-system svc/protodiff 8080:80
-#    open http://localhost:8080
+#    kubectl port-forward -n protodiff-system svc/protodiff 18080:80
+#    open http://localhost:18080
 #
 # Notes:
 # - Both servers have gRPC reflection enabled (required for ProtoDiff)

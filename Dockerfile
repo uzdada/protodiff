@@ -32,7 +32,7 @@ COPY --from=builder /build/protodiff /protodiff
 USER 65532:65532
 
 # Expose web server port
-EXPOSE 8080
+EXPOSE 18080
 
 # Run the application
 ENTRYPOINT ["/protodiff"]

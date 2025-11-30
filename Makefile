@@ -38,7 +38,7 @@ undeploy:
 # Port-forward to access dashboard
 port-forward:
 	@echo "Port-forwarding to dashboard..."
-	@$(KUBECTL) port-forward -n protodiff-system svc/protodiff 8080:80
+	@$(KUBECTL) port-forward -n protodiff-system svc/protodiff 18080:80
 
 # View logs
 logs:

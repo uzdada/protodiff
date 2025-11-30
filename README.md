@@ -118,10 +118,10 @@ spec:
 #### Access the Dashboard
 
 ```bash
-kubectl port-forward -n protodiff-system svc/protodiff 8080:80
+kubectl port-forward -n protodiff-system svc/protodiff 18080:80
 ```
 
-Open your browser to http://localhost:8080
+Open your browser to http://localhost:18080
 
 ### Architecture
 
@@ -164,7 +164,7 @@ protodiff/
 | `CONFIGMAP_NAMESPACE`  | Namespace of the mapping ConfigMap    | `protodiff-system`    |
 | `CONFIGMAP_NAME`       | Name of the mapping ConfigMap         | `protodiff-mapping`   |
 | `DEFAULT_BSR_TEMPLATE` | Fallback BSR module template          | `""`                  |
-| `WEB_ADDR`             | Web server listen address             | `:8080`               |
+| `WEB_ADDR`             | Web server listen address             | `:18080`              |
 | `SCAN_INTERVAL`        | Time between scans                    | `30s`                 |
 
 #### BSR Template
@@ -373,10 +373,10 @@ spec:
 #### 대시보드 접속
 
 ```bash
-kubectl port-forward -n protodiff-system svc/protodiff 8080:80
+kubectl port-forward -n protodiff-system svc/protodiff 18080:80
 ```
 
-브라우저에서 http://localhost:8080 열기
+브라우저에서 http://localhost:18080 열기
 
 ### 아키텍처
 
@@ -419,7 +419,7 @@ protodiff/
 | `CONFIGMAP_NAMESPACE`  | 매핑 ConfigMap의 네임스페이스   | `protodiff-system`    |
 | `CONFIGMAP_NAME`       | 매핑 ConfigMap의 이름           | `protodiff-mapping`   |
 | `DEFAULT_BSR_TEMPLATE` | 폴백 BSR 모듈 템플릿            | `""`                  |
-| `WEB_ADDR`             | 웹 서버 수신 주소              | `:8080`               |
+| `WEB_ADDR`             | 웹 서버 수신 주소              | `:18080`              |
 | `SCAN_INTERVAL`        | 스캔 간격                      | `30s`                 |
 
 #### BSR 템플릿

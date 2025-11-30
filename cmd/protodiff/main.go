@@ -20,7 +20,7 @@ const (
 	// Default configuration values
 	defaultConfigMapNamespace = "protodiff-system"
 	defaultConfigMapName      = "protodiff-mapping"
-	defaultWebAddr            = ":8080"
+	defaultWebAddr            = ":18080"
 	defaultScanInterval       = 30 * time.Second
 )
 

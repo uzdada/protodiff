@@ -130,10 +130,10 @@ spec:
 Port-forward to the ProtoDiff service:
 
 ```bash
-kubectl port-forward -n protodiff-system svc/protodiff 8080:80
+kubectl port-forward -n protodiff-system svc/protodiff 18080:80
 ```
 
-Open your browser to: http://localhost:8080
+Open your browser to: http://localhost:18080
 
 You should see the ProtoDiff dashboard with your services.
 
@@ -152,12 +152,12 @@ Starting ProtoDiff - gRPC Schema Drift Monitor
 Configuration loaded:
   ConfigMap: protodiff-system/protodiff-mapping
   BSR Template: buf.build/myorg/{service}
-  Web Address: :8080
+  Web Address: :18080
   Scan Interval: 30s
 Kubernetes client initialized
 gRPC reflection client initialized
 BSR client initialized (mock mode)
-Starting web server on :8080
+Starting web server on :18080
 Starting scanner with interval: 30s
 Starting scan cycle...
 Discovered 3 gRPC pods
@@ -354,10 +354,10 @@ spec:
 ProtoDiff 서비스로 포트 포워드:
 
 ```bash
-kubectl port-forward -n protodiff-system svc/protodiff 8080:80
+kubectl port-forward -n protodiff-system svc/protodiff 18080:80
 ```
 
-브라우저에서 http://localhost:8080 열기
+브라우저에서 http://localhost:18080 열기
 
 서비스가 포함된 ProtoDiff 대시보드가 표시됩니다.
 
@@ -376,12 +376,12 @@ Starting ProtoDiff - gRPC Schema Drift Monitor
 Configuration loaded:
   ConfigMap: protodiff-system/protodiff-mapping
   BSR Template: buf.build/myorg/{service}
-  Web Address: :8080
+  Web Address: :18080
   Scan Interval: 30s
 Kubernetes client initialized
 gRPC reflection client initialized
 BSR client initialized (mock mode)
-Starting web server on :8080
+Starting web server on :18080
 Starting scanner with interval: 30s
 Starting scan cycle...
 Discovered 3 gRPC pods
