@@ -16,8 +16,11 @@ import (
 )
 
 const (
-	defaultBSRURL     = "https://buf.build"
-	fileDescriptorAPI = "/buf.reflect.v1beta1.FileDescriptorSetService/GetFileDescriptorSet"
+	defaultBSRURL       = "https://buf.build"
+	fileDescriptorAPI   = "/buf.reflect.v1beta1.FileDescriptorSetService/GetFileDescriptorSet"
+	httpClientTimeout   = 30 * time.Second
+	envBSRToken         = "BSR_TOKEN"
+	envBSRURL           = "BSR_URL"
 )
 
 // HTTPClient is a real implementation of BSR Client using HTTP
@@ -29,15 +32,15 @@ type HTTPClient struct {
 
 // NewHTTPClient creates a new BSR HTTP client
 func NewHTTPClient() *HTTPClient {
-	token := os.Getenv("BSR_TOKEN")
-	baseURL := os.Getenv("BSR_URL")
+	token := os.Getenv(envBSRToken)
+	baseURL := os.Getenv(envBSRURL)
 	if baseURL == "" {
 		baseURL = defaultBSRURL
 	}
 
 	return &HTTPClient{
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: httpClientTimeout,
 		},
 		baseURL: baseURL,
 		token:   token,
@@ -48,7 +51,7 @@ func NewHTTPClient() *HTTPClient {
 func NewHTTPClientWithToken(token string) *HTTPClient {
 	return &HTTPClient{
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: httpClientTimeout,
 		},
 		baseURL: defaultBSRURL,
 		token:   token,

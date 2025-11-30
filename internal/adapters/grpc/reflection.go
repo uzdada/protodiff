@@ -25,6 +25,12 @@ import (
 	reflectpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 )
 
+const (
+	// reflectionServiceName is the gRPC reflection service to be skipped
+	// when listing services, as it's a meta-service not part of the schema
+	reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
+)
+
 // ReflectionClient provides gRPC server reflection capabilities
 type ReflectionClient struct{}
 
@@ -63,7 +69,7 @@ func (r *ReflectionClient) FetchSchema(ctx context.Context, address string) (*do
 	// Extract service and method information
 	for _, serviceName := range services {
 		// Skip the reflection service itself
-		if serviceName == "grpc.reflection.v1alpha.ServerReflection" {
+		if serviceName == reflectionServiceName {
 			continue
 		}
 

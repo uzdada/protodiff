@@ -40,6 +40,15 @@ import (
 	"github.com/uzdada/protodiff/internal/scanner"
 )
 
+const (
+	// Environment variable names
+	envUseMockBSR = "USE_MOCK_BSR"
+	envBSRToken   = "BSR_TOKEN"
+
+	// Graceful shutdown timeout
+	gracefulShutdownTimeout = 2 * time.Second
+)
+
 func main() {
 	log.Println("Starting ProtoDiff - gRPC Schema Drift Monitor")
 
@@ -62,12 +71,12 @@ func main() {
 
 	// Initialize BSR client
 	var bsrClient bsr.Client
-	if os.Getenv("USE_MOCK_BSR") == "true" {
+	if os.Getenv(envUseMockBSR) == "true" {
 		bsrClient = bsr.NewMockClient()
 		log.Println("BSR client initialized (mock mode)")
 	} else {
 		bsrClient = bsr.NewHTTPClient()
-		if os.Getenv("BSR_TOKEN") == "" {
+		if os.Getenv(envBSRToken) == "" {
 			log.Println("Warning: BSR_TOKEN not set. BSR API calls may fail for private modules.")
 		}
 		log.Println("BSR client initialized (HTTP mode)")
@@ -123,7 +132,7 @@ func main() {
 	cancel()
 
 	// Give goroutines time to cleanup
-	time.Sleep(2 * time.Second)
+	time.Sleep(gracefulShutdownTimeout)
 
 	log.Println("ProtoDiff stopped")
 }

@@ -17,6 +17,21 @@ import (
 	"time"
 )
 
+const (
+	// Default values
+	defaultConfigMapNamespace = "protodiff-system"
+	defaultConfigMapName      = "protodiff-mapping"
+	defaultWebAddr            = ":18080"
+	defaultScanInterval       = 30 * time.Minute
+
+	// Environment variable names
+	envConfigMapNamespace = "CONFIGMAP_NAMESPACE"
+	envConfigMapName      = "CONFIGMAP_NAME"
+	envBSRTemplate        = "DEFAULT_BSR_TEMPLATE"
+	envWebAddr            = "WEB_ADDR"
+	envScanInterval       = "SCAN_INTERVAL"
+)
+
 // Config holds the application configuration
 type Config struct {
 	// Kubernetes ConfigMap settings
@@ -36,15 +51,15 @@ type Config struct {
 // Load loads configuration from environment variables with defaults
 func Load() Config {
 	config := Config{
-		ConfigMapNamespace: getEnv("CONFIGMAP_NAMESPACE", "protodiff-system"),
-		ConfigMapName:      getEnv("CONFIGMAP_NAME", "protodiff-mapping"),
-		BSRTemplate:        getEnv("DEFAULT_BSR_TEMPLATE", ""),
-		WebAddr:            getEnv("WEB_ADDR", ":18080"),
-		ScanInterval:       30 * time.Minute, // Default scan interval
+		ConfigMapNamespace: getEnv(envConfigMapNamespace, defaultConfigMapNamespace),
+		ConfigMapName:      getEnv(envConfigMapName, defaultConfigMapName),
+		BSRTemplate:        getEnv(envBSRTemplate, ""),
+		WebAddr:            getEnv(envWebAddr, defaultWebAddr),
+		ScanInterval:       defaultScanInterval,
 	}
 
 	// Parse scan interval if provided
-	if intervalStr := os.Getenv("SCAN_INTERVAL"); intervalStr != "" {
+	if intervalStr := os.Getenv(envScanInterval); intervalStr != "" {
 		if duration, err := time.ParseDuration(intervalStr); err == nil {
 			config.ScanInterval = duration
 		} else {
