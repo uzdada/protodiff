@@ -143,6 +143,14 @@ func (s *Scanner) validatePod(ctx context.Context, pod k8s.PodInfo, mappings dom
 		return
 	}
 
+	// Validate pod IP is not empty
+	if pod.IP == "" {
+		result.Message = "Pod IP is empty, cannot connect to gRPC service"
+		result.Status = domain.StatusUnknown
+		s.store.Set(result)
+		return
+	}
+
 	// Fetch live schema via gRPC reflection
 	address := fmt.Sprintf("%s:%d", pod.IP, pod.GRPCPort)
 	liveSchema, err := s.grpcClient.FetchSchema(ctx, address)
@@ -192,6 +200,11 @@ func (s *Scanner) resolveBSRModule(serviceName string, mappings domain.ServiceMa
 
 // schemasMatch compares two schema descriptors
 func (s *Scanner) schemasMatch(live, truth *domain.SchemaDescriptor) bool {
+	// Validate inputs are not nil
+	if live == nil || truth == nil {
+		return false
+	}
+
 	// Simple comparison: check if service names and methods match
 	if len(live.Services) != len(truth.Services) {
 		return false

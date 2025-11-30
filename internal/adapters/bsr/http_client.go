@@ -92,7 +92,10 @@ func (c *HTTPClient) FetchSchema(ctx context.Context, module string) (*domain.Sc
 
 	// Check status code
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("BSR API returned status %d (unable to read response body: %w)", resp.StatusCode, readErr)
+		}
 		return nil, fmt.Errorf("BSR API returned status %d: %s", resp.StatusCode, string(body))
 	}
 

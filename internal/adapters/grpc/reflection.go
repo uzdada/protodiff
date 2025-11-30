@@ -17,6 +17,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/jhump/protoreflect/grpcreflect"
 	"github.com/uzdada/protodiff/internal/core/domain"
@@ -75,6 +76,7 @@ func (r *ReflectionClient) FetchSchema(ctx context.Context, address string) (*do
 
 		serviceDesc, err := refClient.ResolveService(serviceName)
 		if err != nil {
+			log.Printf("Warning: Failed to resolve service %s: %v", serviceName, err)
 			continue // Skip services we can't resolve
 		}
 
