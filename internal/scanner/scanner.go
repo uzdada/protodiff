@@ -121,17 +121,11 @@ func (s *Scanner) loadServiceMappings(ctx context.Context) (domain.ServiceMappin
 	return s.k8sClient.LoadServiceMappings(ctx, s.configMapNS, s.configMapName)
 }
 
-// validatePod validates a single pod's schema against BSR
+// validatePod validates a single pod's schema against BSR.
+// It orchestrates the validation workflow: creating result, resolving BSR module,
+// fetching schemas, comparing them, and storing the result.
 func (s *Scanner) validatePod(ctx context.Context, pod k8s.PodInfo, mappings domain.ServiceMappings) {
-	result := &domain.ScanResult{
-		PodName:      pod.Name,
-		PodNamespace: pod.Namespace,
-		ServiceName:  pod.ServiceName,
-		PodIP:        pod.IP,
-		GRPCPort:     pod.GRPCPort,
-		LastChecked:  time.Now(),
-		Status:       domain.StatusUnknown,
-	}
+	result := s.createScanResult(pod)
 
 	// Resolve BSR module
 	bsrModule := s.resolveBSRModule(pod.ServiceName, mappings)
@@ -151,13 +145,36 @@ func (s *Scanner) validatePod(ctx context.Context, pod k8s.PodInfo, mappings dom
 		return
 	}
 
+	// Fetch and compare schemas
+	s.fetchAndCompareSchemas(ctx, pod, bsrModule, result)
+
+	s.store.Set(result)
+	log.Printf("Validated %s/%s: %s", pod.Namespace, pod.Name, result.Status)
+}
+
+// createScanResult initializes a new ScanResult from pod information.
+// All results start with StatusUnknown until validation completes.
+func (s *Scanner) createScanResult(pod k8s.PodInfo) *domain.ScanResult {
+	return &domain.ScanResult{
+		PodName:      pod.Name,
+		PodNamespace: pod.Namespace,
+		ServiceName:  pod.ServiceName,
+		PodIP:        pod.IP,
+		GRPCPort:     pod.GRPCPort,
+		LastChecked:  time.Now(),
+		Status:       domain.StatusUnknown,
+	}
+}
+
+// fetchAndCompareSchemas retrieves schemas from both the live pod and BSR,
+// then compares them to detect drift. Updates the result with comparison outcome.
+func (s *Scanner) fetchAndCompareSchemas(ctx context.Context, pod k8s.PodInfo, bsrModule string, result *domain.ScanResult) {
 	// Fetch live schema via gRPC reflection
 	address := fmt.Sprintf("%s:%d", pod.IP, pod.GRPCPort)
 	liveSchema, err := s.grpcClient.FetchSchema(ctx, address)
 	if err != nil {
 		result.Message = fmt.Sprintf("Failed to fetch live schema: %v", err)
 		result.Status = domain.StatusUnknown
-		s.store.Set(result)
 		return
 	}
 
@@ -166,7 +183,6 @@ func (s *Scanner) validatePod(ctx context.Context, pod k8s.PodInfo, mappings dom
 	if err != nil {
 		result.Message = fmt.Sprintf("Failed to fetch BSR schema: %v", err)
 		result.Status = domain.StatusUnknown
-		s.store.Set(result)
 		return
 	}
 
@@ -178,9 +194,6 @@ func (s *Scanner) validatePod(ctx context.Context, pod k8s.PodInfo, mappings dom
 		result.Status = domain.StatusMismatch
 		result.Message = "Schema drift detected"
 	}
-
-	s.store.Set(result)
-	log.Printf("Validated %s/%s: %s", pod.Namespace, pod.Name, result.Status)
 }
 
 // resolveBSRModule determines the BSR module for a service

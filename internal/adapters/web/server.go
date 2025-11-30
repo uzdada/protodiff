@@ -82,8 +82,24 @@ func (s *Server) Start() error {
 // handleDashboard renders the main dashboard
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	results := s.store.GetAll()
+	stats := calculateStatistics(results)
 
-	// Calculate statistics
+	data := TemplateData{
+		Results:    results,
+		Stats:      stats,
+		LastUpdate: time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := s.template.Execute(w, data); err != nil {
+		log.Printf("Error rendering template: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+// calculateStatistics aggregates scan result statistics for dashboard display.
+// It counts the total results and breaks them down by status (sync, mismatch, unknown).
+func calculateStatistics(results []*domain.ScanResult) Statistics {
 	stats := Statistics{
 		TotalCount: len(results),
 	}
@@ -99,17 +115,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data := TemplateData{
-		Results:    results,
-		Stats:      stats,
-		LastUpdate: time.Now().Format("2006-01-02 15:04:05"),
-	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := s.template.Execute(w, data); err != nil {
-		log.Printf("Error rendering template: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+	return stats
 }
 
 // handleHealth provides a health check endpoint
