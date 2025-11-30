@@ -105,12 +105,9 @@ func (c *Client) DiscoverGRPCPods(ctx context.Context) ([]PodInfo, error) {
 	return podInfos, nil
 }
 
-// GetConfigMap
-/*
-- retrieves a ConfigMap from the specified namespace
-- client means k8s client
-
-*/
+// GetConfigMap retrieves a ConfigMap from the specified namespace.
+// It uses the Kubernetes client to fetch the ConfigMap by name and returns
+// an error if the ConfigMap does not exist or cannot be accessed.
 func (c *Client) GetConfigMap(ctx context.Context, namespace, name string) (*corev1.ConfigMap, error) {
 	cm, err := c.clientset.CoreV1().
 		ConfigMaps(namespace).
