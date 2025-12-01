@@ -185,6 +185,7 @@ func (s *Scanner) createScanResult(pod k8s.PodInfo) *domain.ScanResult {
 func (s *Scanner) fetchAndCompareSchemas(ctx context.Context, pod k8s.PodInfo, bsrModule string, result *domain.ScanResult) {
 	// Fetch live schema via gRPC reflection
 	address := fmt.Sprintf("%s:%d", pod.IP, pod.GRPCPort)
+	log.Printf("Connecting to %s/%s at %s (port %d)", pod.Namespace, pod.Name, address, pod.GRPCPort)
 	liveSchema, err := s.grpcClient.FetchSchema(ctx, address)
 	if err != nil {
 		result.Message = fmt.Sprintf("Failed to fetch live schema: %v", err)

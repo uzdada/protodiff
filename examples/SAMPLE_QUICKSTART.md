@@ -333,7 +333,12 @@ kubectl describe pod -n grpc-test <pod-name>
 # Common issues:
 # - ImagePullBackOff: Check if images are accessible from Docker Hub
 # - CrashLoopBackOff: Check logs with kubectl logs
+# - ARM64/AMD64 compatibility: Images are now built for both architectures
 ```
+
+#### Health Check Failures
+
+If you see health check errors like "nc: not found", the images use tcpSocket probes instead of exec commands with netcat.
 
 #### Connection Refused Between Services
 

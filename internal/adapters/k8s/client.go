@@ -91,8 +91,21 @@ func (c *Client) DiscoverGRPCPods(ctx context.Context) ([]PodInfo, error) {
 			serviceName = "unknown"
 		}
 
-		// Determine gRPC port (default to 9090)
+		// Determine gRPC port from container ports, fallback to 9090
 		grpcPort := int32(DefaultGRPCPort)
+		if len(pod.Spec.Containers) > 0 {
+			for _, container := range pod.Spec.Containers {
+				for _, port := range container.Ports {
+					if port.Name == "grpc" || port.Protocol == corev1.ProtocolTCP {
+						grpcPort = port.ContainerPort
+						break
+					}
+				}
+				if grpcPort != DefaultGRPCPort {
+					break
+				}
+			}
+		}
 
 		podInfos = append(podInfos, PodInfo{
 			Name:        pod.Name,
@@ -126,8 +139,21 @@ func (c *Client) DiscoverPodsForServices(ctx context.Context, serviceNames []str
 				continue
 			}
 
-			// Determine gRPC port (default to 9090)
+			// Determine gRPC port from container ports, fallback to 9090
 			grpcPort := int32(DefaultGRPCPort)
+			if len(pod.Spec.Containers) > 0 {
+				for _, container := range pod.Spec.Containers {
+					for _, port := range container.Ports {
+						if port.Name == "grpc" || port.Protocol == corev1.ProtocolTCP {
+							grpcPort = port.ContainerPort
+							break
+						}
+					}
+					if grpcPort != DefaultGRPCPort {
+						break
+					}
+				}
+			}
 
 			podInfos = append(podInfos, PodInfo{
 				Name:        pod.Name,

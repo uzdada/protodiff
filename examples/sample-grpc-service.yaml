@@ -66,19 +66,13 @@ spec:
             memory: "128Mi"
             cpu: "200m"
         livenessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -c
-            - "nc -z localhost 9090"
+          tcpSocket:
+            port: 9090
           initialDelaySeconds: 5
           periodSeconds: 10
         readinessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -c
-            - "nc -z localhost 9090"
+          tcpSocket:
+            port: 9090
           initialDelaySeconds: 3
           periodSeconds: 5
 
@@ -138,19 +132,13 @@ spec:
             memory: "512Mi"
             cpu: "500m"
         livenessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -c
-            - "nc -z localhost 9091"
+          tcpSocket:
+            port: 9091
           initialDelaySeconds: 10
           periodSeconds: 10
         readinessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -c
-            - "nc -z localhost 9091"
+          tcpSocket:
+            port: 9091
           initialDelaySeconds: 5
           periodSeconds: 5
 
