@@ -61,3 +61,12 @@ func (sm ServiceMappings) Has(serviceName string) bool {
 	_, exists := sm.mappings[serviceName]
 	return exists
 }
+
+// GetServiceNames returns all service names from the mappings
+func (sm ServiceMappings) GetServiceNames() []string {
+	names := make([]string, 0, len(sm.mappings))
+	for serviceName := range sm.mappings {
+		names = append(names, serviceName)
+	}
+	return names
+}

@@ -69,6 +69,7 @@ type PodInfo struct {
 }
 
 // DiscoverGRPCPods finds all pods labeled with grpc-service=true
+// Deprecated: Use DiscoverPodsForServices for ConfigMap-based discovery
 func (c *Client) DiscoverGRPCPods(ctx context.Context) ([]PodInfo, error) {
 	pods, err := c.clientset.CoreV1().Pods("").List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=true", GRPCServiceLabel),
@@ -100,6 +101,42 @@ func (c *Client) DiscoverGRPCPods(ctx context.Context) ([]PodInfo, error) {
 			IP:          pod.Status.PodIP,
 			GRPCPort:    grpcPort,
 		})
+	}
+
+	return podInfos, nil
+}
+
+// DiscoverPodsForServices finds pods for specific service names from ConfigMap
+// This is more efficient than label-based discovery when you have explicit service mappings
+func (c *Client) DiscoverPodsForServices(ctx context.Context, serviceNames []string) ([]PodInfo, error) {
+	var podInfos []PodInfo
+
+	for _, serviceName := range serviceNames {
+		// Find pods with app=serviceName label across all namespaces
+		pods, err := c.clientset.CoreV1().Pods("").List(ctx, metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s=%s", ServiceNameLabel, serviceName),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to list pods for service %s: %w", serviceName, err)
+		}
+
+		for _, pod := range pods.Items {
+			// Skip pods that are not running
+			if pod.Status.Phase != corev1.PodRunning {
+				continue
+			}
+
+			// Determine gRPC port (default to 9090)
+			grpcPort := int32(DefaultGRPCPort)
+
+			podInfos = append(podInfos, PodInfo{
+				Name:        pod.Name,
+				Namespace:   pod.Namespace,
+				ServiceName: serviceName,
+				IP:          pod.Status.PodIP,
+				GRPCPort:    grpcPort,
+			})
+		}
 	}
 
 	return podInfos, nil

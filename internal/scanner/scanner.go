@@ -5,8 +5,8 @@
 // them to detect drift. Results are stored in-memory and surfaced through the web UI.
 //
 // The main workflow is:
-//  1. Discover pods with grpc-service=true label
-//  2. Load service-to-BSR mappings from ConfigMap
+//  1. Load service-to-BSR mappings from ConfigMap
+//  2. Discover pods for services specified in ConfigMap (or fallback to label-based discovery)
 //  3. For each pod:
 //     - Fetch live schema via gRPC reflection
 //     - Fetch truth schema from BSR
@@ -99,10 +99,24 @@ func (s *Scanner) runScan(ctx context.Context) error {
 		mappings = domain.NewServiceMappings(nil) // Empty mappings
 	}
 
-	// Discover gRPC pods
-	pods, err := s.k8sClient.DiscoverGRPCPods(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to discover pods: %w", err)
+	// Get service names from ConfigMap for targeted discovery
+	serviceNames := mappings.GetServiceNames()
+
+	var pods []k8s.PodInfo
+	if len(serviceNames) > 0 {
+		// Use ConfigMap-based discovery for better efficiency
+		log.Printf("Using ConfigMap-based discovery for %d services", len(serviceNames))
+		pods, err = s.k8sClient.DiscoverPodsForServices(ctx, serviceNames)
+		if err != nil {
+			return fmt.Errorf("failed to discover pods for services: %w", err)
+		}
+	} else {
+		// Fallback to label-based discovery if ConfigMap is empty
+		log.Println("ConfigMap is empty, falling back to label-based discovery")
+		pods, err = s.k8sClient.DiscoverGRPCPods(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to discover pods: %w", err)
+		}
 	}
 
 	log.Printf("Discovered %d gRPC pods", len(pods))
