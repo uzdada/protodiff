@@ -65,10 +65,10 @@ metadata:
 data:
   # Map your service names to BSR modules
   # Format: service-name: "buf.build/org/MODULE_NAME"
+  # "buf.build/proto-diff-bsr/test-services" is an example. (it's exist, but created for test)
   # Replace these examples with your actual services:
-  user-service: "buf.build/acme/user"
-  order-service: "buf.build/acme/order"
-  payment-service: "buf.build/acme/payment"
+  grpc-server-go: "buf.build/proto-diff-bsr/test-services"
+  grpc-server-java: "buf.build/proto-diff-bsr/test-services"
 
 ---
 # Deployment for ProtoDiff

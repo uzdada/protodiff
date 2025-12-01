@@ -32,11 +32,11 @@ ProtoDiff is a Kubernetes-native monitoring tool that runs inside your cluster t
 - Kubernetes cluster (v1.25+)
 - kubectl configured to access your cluster
 - gRPC services with server reflection enabled
-- Pods labeled with `grpc-service=true`
-- **BSR Token** (required for schema validation)
+- **BSR Token** (required for BSR schema validation)
   - Sign up at https://buf.build
   - Get your token from https://buf.build/settings/user
   - Click "Create Token" and save it securely
+  - **Note**: Public BSR modules can be accessed without a token
 
 ### Quick Start
 
@@ -98,22 +98,7 @@ For quick testing, use the interactive installation script:
 curl -sL https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.sh | bash
 ```
 
-#### Label Your gRPC Pods
-
-Add the `grpc-service=true` label to your gRPC service pods:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: user-service
-spec:
-  template:
-    metadata:
-      labels:
-        app: user-service
-        grpc-service: "true"  # Required for ProtoDiff discovery
-```
+**Note**: Services specified in the ConfigMap will be automatically discovered by their `app` label. No additional labels are required.
 
 #### Access the Dashboard
 
@@ -146,8 +131,8 @@ protodiff/
 
 ### How It Works
 
-1. **Discovery**: Scans the cluster for pods labeled `grpc-service=true`
-2. **Resolution**: Resolves BSR module names using ConfigMap or template fallback
+1. **Discovery**: Scans the cluster for services specified in ConfigMap (or falls back to label-based discovery if ConfigMap is empty)
+2. **Resolution**: Resolves BSR module names from ConfigMap entries
 3. **Validation**:
    - Fetches "live schema" from pod via gRPC Reflection
    - Fetches "truth schema" from Buf Schema Registry
@@ -230,7 +215,8 @@ Set up the following GitHub Secrets:
 **Issue**: Dashboard shows "No gRPC services discovered yet"
 
 **Solutions**:
-- Verify pods have `grpc-service=true` label
+- Verify services are listed in the ConfigMap: `kubectl get configmap protodiff-mapping -n protodiff-system -o yaml`
+- Ensure your service pods have the `app` label matching the service name in ConfigMap
 - Check ProtoDiff logs: `make logs`
 - Ensure pods are in `Running` state
 
@@ -287,11 +273,11 @@ ProtoDiff는 Kubernetes 클러스터 내부에서 실행되는 네이티브 모�
 - Kubernetes 클러스터 (v1.25+)
 - kubectl 설정 완료
 - 서버 리플렉션이 활성화된 gRPC 서비스
-- `grpc-service=true` 레이블이 있는 Pod
-- **BSR 토큰** (스키마 검증에 필요)
+- **BSR 토큰** (BSR 스키마 검증에 필요)
   - https://buf.build 에서 가입
   - https://buf.build/settings/user 에서 토큰 생성
   - "Create Token" 클릭 후 안전하게 보관
+  - **참고**: 퍼블릭 BSR 모듈은 토큰 없이 접근 가능
 
 ### 빠른 시작
 
@@ -353,22 +339,7 @@ kubectl get pods -n protodiff-system
 curl -sL https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.sh | bash
 ```
 
-#### gRPC Pod에 레이블 추가
-
-gRPC 서비스 Pod에 `grpc-service=true` 레이블 추가:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: user-service
-spec:
-  template:
-    metadata:
-      labels:
-        app: user-service
-        grpc-service: "true"  # ProtoDiff 발견에 필요
-```
+**참고**: ConfigMap에 지정된 서비스는 `app` 레이블을 통해 자동으로 발견됩니다. 추가 레이블이 필요하지 않습니다.
 
 #### 대시보드 접속
 
@@ -401,8 +372,8 @@ protodiff/
 
 ### 동작 방식
 
-1. **발견**: `grpc-service=true` 레이블이 있는 Pod 스캔
-2. **해석**: ConfigMap 또는 템플릿 폴백을 사용한 BSR 모듈 이름 해석
+1. **발견**: ConfigMap에 지정된 서비스 스캔 (ConfigMap이 비어있으면 레이블 기반 발견으로 폴백)
+2. **해석**: ConfigMap 항목에서 BSR 모듈 이름 해석
 3. **검증**:
    - gRPC Reflection을 통해 Pod에서 "라이브 스키마" 가져오기
    - Buf Schema Registry에서 "진실 스키마" 가져오기
@@ -468,7 +439,8 @@ make lint          # 린터 실행
 **문제**: 대시보드에 "No gRPC services discovered yet" 표시
 
 **해결 방법**:
-- Pod에 `grpc-service=true` 레이블이 있는지 확인
+- ConfigMap에 서비스가 나열되어 있는지 확인: `kubectl get configmap protodiff-mapping -n protodiff-system -o yaml`
+- 서비스 Pod에 ConfigMap의 서비스명과 일치하는 `app` 레이블이 있는지 확인
 - ProtoDiff 로그 확인: `make logs`
 - Pod가 `Running` 상태인지 확인
 
