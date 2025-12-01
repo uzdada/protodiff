@@ -194,20 +194,25 @@ func (s *Scanner) fetchAndCompareSchemas(ctx context.Context, pod k8s.PodInfo, b
 	}
 
 	// Fetch truth schema from BSR
+	log.Printf("Fetching BSR schema for module: %s", bsrModule)
 	truthSchema, err := s.bsrClient.FetchSchema(ctx, bsrModule)
 	if err != nil {
 		result.Message = fmt.Sprintf("Failed to fetch BSR schema: %v", err)
 		result.Status = domain.StatusUnknown
+		log.Printf("BSR fetch error for %s: %v", bsrModule, err)
 		return
 	}
+	log.Printf("BSR schema fetched: %d services, %d messages", len(truthSchema.Services), len(truthSchema.Messages))
 
 	// Compare schemas
 	if s.schemasMatch(liveSchema, truthSchema) {
 		result.Status = domain.StatusSync
 		result.Message = "Schemas are in sync"
+		log.Printf("✓ Schemas match for %s/%s", pod.Namespace, pod.Name)
 	} else {
 		result.Status = domain.StatusMismatch
 		result.Message = "Schema drift detected"
+		log.Printf("✗ Schema mismatch for %s/%s", pod.Namespace, pod.Name)
 	}
 }
 

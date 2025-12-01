@@ -16,11 +16,11 @@ import (
 )
 
 const (
-	defaultBSRURL       = "https://buf.build"
-	fileDescriptorAPI   = "/buf.reflect.v1beta1.FileDescriptorSetService/GetFileDescriptorSet"
-	httpClientTimeout   = 30 * time.Second
-	envBSRToken         = "BSR_TOKEN"
-	envBSRURL           = "BSR_URL"
+	defaultBSRURL     = "https://buf.build"
+	fileDescriptorAPI = "/buf.reflect.v1beta1.FileDescriptorSetService/GetFileDescriptorSet"
+	httpClientTimeout = 30 * time.Second
+	envBSRToken       = "BSR_TOKEN"
+	envBSRURL         = "BSR_URL"
 )
 
 // HTTPClient is a real implementation of BSR Client using HTTP
@@ -117,6 +117,12 @@ func (c *HTTPClient) FetchSchema(ctx context.Context, module string) (*domain.Sc
 		return nil, fmt.Errorf("no FileDescriptorSet in response")
 	}
 
+	// Debug: log file descriptor set info
+	fmt.Printf("DEBUG: FileDescriptorSet contains %d files\n", len(responseData.FileDescriptorSet.File))
+	for i, file := range responseData.FileDescriptorSet.File {
+		fmt.Printf("DEBUG: File %d: %s (deps: %d)\n", i, file.GetName(), len(file.GetDependency()))
+	}
+
 	// Convert FileDescriptorSet to SchemaDescriptor
 	schema, err := c.fileDescriptorSetToSchema(responseData.FileDescriptorSet)
 	if err != nil {
@@ -132,14 +138,11 @@ func (c *HTTPClient) fileDescriptorSetToSchema(fds *descriptorpb.FileDescriptorS
 		return nil, fmt.Errorf("empty FileDescriptorSet")
 	}
 
-	// Parse file descriptors
-	var fileDescs []*desc.FileDescriptor
-	for _, fdp := range fds.File {
-		fd, err := desc.CreateFileDescriptor(fdp)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create file descriptor: %w", err)
-		}
-		fileDescs = append(fileDescs, fd)
+	// Parse file descriptors with dependencies
+	// Use CreateFileDescriptors to handle dependencies properly
+	fileDescs, err := desc.CreateFileDescriptors(fds.File)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create file descriptors: %w", err)
 	}
 
 	// Extract services and messages
