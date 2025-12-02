@@ -9,19 +9,19 @@
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #326CE5 0%, #2496ED 100%);
-            --success-color: #13C277;
-            --danger-color: #E8423F;
-            --warning-color: #F4B942;
-            --info-color: #326CE5;
-            --bg-primary: #0D1117;
-            --bg-secondary: #161B22;
-            --bg-tertiary: #21262D;
-            --text-primary: #E6EDF3;
-            --text-secondary: #7D8590;
-            --border-color: #30363D;
-            --accent-blue: #58A6FF;
+            --success-color: #0D8050;
+            --danger-color: #D73027;
+            --warning-color: #D97706;
+            --info-color: #0969DA;
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F6F8FA;
+            --bg-tertiary: #EAEEF2;
+            --text-primary: #1F2328;
+            --text-secondary: #656D76;
+            --border-color: #D0D7DE;
+            --accent-blue: #0969DA;
             --k8s-blue: #326CE5;
-            --docker-blue: #2496ED;
+            --docker-blue: #0DB7ED;
         }
 
         * {
@@ -44,7 +44,7 @@
         .header {
             background: var(--primary-gradient);
             padding: 2.5rem 0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -57,12 +57,14 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+            color: #FFFFFF;
         }
 
         .header .lead {
             font-size: 1.1rem;
             opacity: 0.95;
             margin: 0;
+            color: #FFFFFF;
         }
 
         .stats-grid {
@@ -78,12 +80,13 @@
             padding: 1.5rem;
             border-left: 4px solid;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border-color);
         }
 
         .stats-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
         .stats-card.success { border-left-color: var(--success-color); }
@@ -106,10 +109,11 @@
         }
 
         .table-container {
-            background: var(--bg-secondary);
+            background: var(--bg-primary);
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border-color);
         }
 
         .table {
@@ -137,7 +141,7 @@
         }
 
         .table tbody tr:hover {
-            background: var(--bg-tertiary) !important;
+            background: var(--bg-secondary) !important;
         }
 
         .table tbody td {
@@ -160,28 +164,28 @@
         }
 
         .badge-sync {
-            background: rgba(19, 194, 119, 0.15);
+            background: #D1F4E0;
             color: var(--success-color);
             border: 1px solid var(--success-color);
             font-weight: 700;
         }
 
         .badge-mismatch {
-            background: rgba(232, 66, 63, 0.15);
+            background: #FFE0E0;
             color: var(--danger-color);
             border: 1px solid var(--danger-color);
             font-weight: 700;
         }
 
         .badge-unknown {
-            background: rgba(244, 185, 66, 0.15);
+            background: #FFF4CC;
             color: var(--warning-color);
             border: 1px solid var(--warning-color);
             font-weight: 700;
         }
 
         .diff-details {
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
             padding: 2rem;
             border-top: 2px solid var(--border-color);
         }
@@ -257,6 +261,12 @@
             background: var(--bg-primary);
             border-radius: 6px;
             border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .service-item:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-blue);
         }
 
         .service-name {
@@ -274,19 +284,19 @@
         }
 
         .badge-common {
-            background: rgba(19, 194, 119, 0.2);
+            background: #D1F4E0;
             color: var(--success-color);
             font-weight: 700;
         }
 
         .badge-live-only {
-            background: rgba(244, 185, 66, 0.2);
+            background: #FFF4CC;
             color: var(--warning-color);
             font-weight: 700;
         }
 
         .badge-bsr-only {
-            background: rgba(88, 166, 255, 0.2);
+            background: #DDF4FF;
             color: var(--accent-blue);
             font-weight: 700;
         }
@@ -303,7 +313,7 @@
         }
 
         .service-detail {
-            background: var(--bg-secondary);
+            background: var(--bg-primary);
             border-radius: 10px;
             padding: 1.5rem;
             margin-bottom: 1rem;
@@ -333,7 +343,7 @@
         }
 
         .method-item {
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
             padding: 0.75rem 1rem;
             border-radius: 6px;
             border: 1px solid var(--border-color);
@@ -342,6 +352,12 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .method-item:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--success-color);
         }
 
         .method-icon {
@@ -372,7 +388,7 @@
         }
 
         .method-mismatch-table tbody tr:hover {
-            background: var(--bg-tertiary);
+            background: var(--bg-secondary);
         }
 
         .status-match {
@@ -393,15 +409,15 @@
         }
 
         .alert-warning {
-            background: rgba(244, 185, 66, 0.1);
+            background: #FFF4CC;
             border-color: var(--warning-color);
-            color: var(--warning-color);
+            color: #854D0E;
         }
 
         .alert-info {
-            background: rgba(88, 166, 255, 0.1);
+            background: #DDF4FF;
             border-color: var(--accent-blue);
-            color: var(--accent-blue);
+            color: #0550AE;
         }
 
         .footer {
@@ -443,7 +459,7 @@
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
@@ -451,7 +467,7 @@
 
         .btn-float:hover {
             transform: scale(1.1);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
         }
 
         .btn-refresh {
@@ -493,10 +509,11 @@
         }
 
         .empty-state code {
-            background: var(--bg-tertiary);
+            background: var(--bg-secondary);
             padding: 0.25rem 0.5rem;
             border-radius: 4px;
             font-size: 0.875rem;
+            border: 1px solid var(--border-color);
         }
 
         @media (max-width: 768px) {
