@@ -1,5 +1,11 @@
 package bsr
 
+// DEPRECATED: HTTPClient is not production-ready due to incomplete data returned by BSR API.
+// The FileDescriptorSet API returns schemas with missing message types and empty input/output references.
+// Use BufClient instead, which uses `buf export` CLI for reliable schema fetching.
+//
+// This implementation is kept for educational purposes and potential future use if BSR API is fixed.
+
 import (
 	"bytes"
 	"context"
@@ -120,7 +126,20 @@ func (c *HTTPClient) FetchSchema(ctx context.Context, module string) (*domain.Sc
 	// Debug: log file descriptor set info
 	fmt.Printf("DEBUG: FileDescriptorSet contains %d files\n", len(responseData.FileDescriptorSet.File))
 	for i, file := range responseData.FileDescriptorSet.File {
-		fmt.Printf("DEBUG: File %d: %s (deps: %d)\n", i, file.GetName(), len(file.GetDependency()))
+		fmt.Printf("DEBUG: File %d: %s (deps: %d, messages: %d, services: %d)\n",
+			i, file.GetName(), len(file.GetDependency()), len(file.GetMessageType()), len(file.GetService()))
+		// Debug message types
+		for _, msg := range file.GetMessageType() {
+			fmt.Printf("  Message: %s\n", msg.GetName())
+		}
+		// Debug services
+		for _, svc := range file.GetService() {
+			fmt.Printf("  Service: %s\n", svc.GetName())
+			for _, method := range svc.GetMethod() {
+				fmt.Printf("    Method: %s (input: %s, output: %s)\n",
+					method.GetName(), method.GetInputType(), method.GetOutputType())
+			}
+		}
 	}
 
 	// Convert FileDescriptorSet to SchemaDescriptor

@@ -75,11 +75,11 @@ func main() {
 		bsrClient = bsr.NewMockClient()
 		log.Println("BSR client initialized (mock mode)")
 	} else {
-		bsrClient = bsr.NewHTTPClient()
+		bsrClient = bsr.NewBufClient()
 		if os.Getenv(envBSRToken) == "" {
 			log.Println("Warning: BSR_TOKEN not set. BSR API calls may fail for private modules.")
 		}
-		log.Println("BSR client initialized (HTTP mode)")
+		log.Println("BSR client initialized (buf CLI mode)")
 	}
 
 	// Initialize web server
