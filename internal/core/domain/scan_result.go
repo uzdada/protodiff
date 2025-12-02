@@ -40,6 +40,10 @@ type SchemaDiff struct {
 	MethodMismatches []ServiceMethodMismatch `json:"method_mismatches,omitempty"`
 	// MatchedServices are services with matching methods
 	MatchedServices []ServiceMethodMatch `json:"matched_services,omitempty"`
+	// MessageFieldMismatches are messages with different fields
+	MessageFieldMismatches []MessageFieldMismatch `json:"message_field_mismatches,omitempty"`
+	// MatchedMessages are messages with matching fields
+	MatchedMessages []MessageFieldMatch `json:"matched_messages,omitempty"`
 }
 
 // ServiceMethodMismatch represents a method count mismatch for a service
@@ -55,4 +59,30 @@ type ServiceMethodMismatch struct {
 type ServiceMethodMatch struct {
 	ServiceName string   `json:"service_name"`
 	Methods     []string `json:"methods"`
+}
+
+// MessageFieldMismatch represents a message with field differences
+type MessageFieldMismatch struct {
+	MessageName    string              `json:"message_name"`
+	LiveFields     int                 `json:"live_fields"`
+	BSRFields      int                 `json:"bsr_fields"`
+	MissingFields  []FieldDescriptor   `json:"missing_fields,omitempty"`
+	ExtraFields    []FieldDescriptor   `json:"extra_fields,omitempty"`
+	ModifiedFields []FieldModification `json:"modified_fields,omitempty"`
+}
+
+// FieldModification represents a field that exists in both but has different properties
+type FieldModification struct {
+	FieldName  string `json:"field_name"`
+	LiveType   string `json:"live_type"`
+	BSRType    string `json:"bsr_type"`
+	LiveNumber int32  `json:"live_number"`
+	BSRNumber  int32  `json:"bsr_number"`
+	ChangeType string `json:"change_type"` // "type_changed", "number_changed", "repeated_changed"
+}
+
+// MessageFieldMatch represents a message with matching fields
+type MessageFieldMatch struct {
+	MessageName string            `json:"message_name"`
+	Fields      []FieldDescriptor `json:"fields"`
 }
