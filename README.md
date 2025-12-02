@@ -120,14 +120,18 @@ protodiff/
 │   │   ├── domain/             # Business models
 │   │   └── store/              # Thread-safe in-memory storage
 │   ├── adapters/
-│   │   ├── k8s/                # Kubernetes client
+│   │   ├── k8s/                # Kubernetes client (auto port detection)
 │   │   ├── grpc/               # gRPC reflection client
-│   │   ├── bsr/                # BSR API client
+│   │   ├── bsr/                # BSR clients (buf CLI & HTTP)
 │   │   └── web/                # HTTP server & dashboard
 │   └── scanner/                # Schema validation orchestrator
 ├── web/templates/              # HTML dashboard templates
 └── deploy/k8s/                 # Kubernetes manifests
 ```
+
+**BSR Integration Methods:**
+- **BufClient** (default): Uses `buf export` CLI for reliable schema fetching
+- **HTTPClient** (experimental): Direct BSR API access (not production-ready)
 
 ### How It Works
 
@@ -208,6 +212,28 @@ Set up the following GitHub Secrets:
 - `wooojin2da/protodiff:latest` - Latest build from main branch
 - `wooojin2da/protodiff:main-<sha>` - Specific commit SHA
 
+### Technical Details
+
+#### Port Auto-Detection
+
+ProtoDiff automatically detects gRPC ports from pod container specifications:
+- Scans pod's `containerPort` definitions
+- Looks for ports named "grpc" or using TCP protocol
+- Falls back to default port 9090 if not specified
+
+**Example:**
+```yaml
+ports:
+  - name: grpc
+    containerPort: 9091  # Automatically detected
+```
+
+#### Multi-Architecture Support
+
+All components support both AMD64 and ARM64 architectures:
+- Docker images built with `docker buildx --platform linux/amd64,linux/arm64`
+- Tested on: x86_64 Linux, Apple Silicon (M1/M2), AWS Graviton
+
 ### Troubleshooting
 
 #### No Services Discovered
@@ -217,7 +243,7 @@ Set up the following GitHub Secrets:
 **Solutions**:
 - Verify services are listed in the ConfigMap: `kubectl get configmap protodiff-mapping -n protodiff-system -o yaml`
 - Ensure your service pods have the `app` label matching the service name in ConfigMap
-- Check ProtoDiff logs: `make logs`
+- Check ProtoDiff logs: `kubectl logs -n protodiff-system -l app.kubernetes.io/name=protodiff`
 - Ensure pods are in `Running` state
 
 #### Schema Fetch Failed
@@ -227,7 +253,22 @@ Set up the following GitHub Secrets:
 **Solutions**:
 - Verify gRPC reflection is enabled on your service
 - Check pod IP is accessible from ProtoDiff pod
-- Ensure gRPC port is correct (default: 9090)
+- Ensure gRPC port is correct (auto-detected from containerPort or defaults to 9090)
+- Check logs for "Connection refused" errors
+
+#### BSR Export Failed
+
+**Issue**: "buf export failed: read-only file system"
+
+**Solution**: This is already fixed in the latest deployment manifest. The deployment includes:
+- Writable `/tmp` volume mount (`emptyDir`)
+- `HOME=/tmp` environment variable for buf CLI cache
+
+If using an old manifest, update with:
+```bash
+curl -O https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.yaml
+kubectl apply -f install.yaml
+```
 
 #### No BSR Mapping Found
 
@@ -236,7 +277,7 @@ Set up the following GitHub Secrets:
 **Solutions**:
 - Add service mapping to `protodiff-mapping` ConfigMap
 - Set `DEFAULT_BSR_TEMPLATE` environment variable
-- Restart ProtoDiff pod after ConfigMap changes
+- Restart ProtoDiff pod after ConfigMap changes: `kubectl rollout restart deployment/protodiff -n protodiff-system`
 
 ### Contributing
 

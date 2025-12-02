@@ -295,6 +295,12 @@ Open http://localhost:18080 in your browser. You should see:
 - 🔴 **Red (MISMATCH)**: Schema drift detected - update needed
 - 🟡 **Yellow (UNKNOWN)**: Can't fetch schema or BSR module not found
 
+**Note on Port Detection:**
+ProtoDiff automatically detects gRPC ports from your pod's container specifications:
+- Go service: Port 9090 (auto-detected from containerPort)
+- Java service: Port 9091 (auto-detected from containerPort)
+- No manual configuration needed!
+
 #### 4. Understanding the Dashboard
 
 The dashboard shows the current status of schema synchronization. For these test services, you should see:
@@ -338,7 +344,13 @@ kubectl describe pod -n grpc-test <pod-name>
 
 #### Health Check Failures
 
-If you see health check errors like "nc: not found", the images use tcpSocket probes instead of exec commands with netcat.
+**Fixed**: Health checks now use `tcpSocket` probes instead of exec commands with netcat. This works across all container environments without requiring additional utilities.
+
+```yaml
+livenessProbe:
+  tcpSocket:
+    port: 9090  # or 9091 for Java service
+```
 
 #### Connection Refused Between Services
 
