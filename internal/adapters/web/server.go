@@ -43,7 +43,14 @@ type Server struct {
 
 // NewServer creates a new web server instance
 func NewServer(store *store.Store, addr string) (*Server, error) {
-	tmpl, err := template.New("index").Parse(indexTemplate)
+	// Create template with custom functions
+	funcMap := template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+	}
+
+	tmpl, err := template.New("index").Funcs(funcMap).Parse(indexTemplate)
 	if err != nil {
 		return nil, err
 	}

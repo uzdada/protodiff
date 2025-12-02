@@ -66,20 +66,37 @@ data:
   payment-service: "buf.build/acme/payment"
 ```
 
-#### 3. Deploy
+#### 3. Set Your BSR Token
 
-Apply the manifest:
+**Option A: Edit install.yaml (for testing/quickstart)**
+
+Find the Secret section in install.yaml and add your token:
+
+```yaml
+---
+# Secret for BSR authentication token
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bsr-token
+  namespace: protodiff-system
+stringData:
+  token: "YOUR_BSR_TOKEN_HERE"  # Replace with your actual token
+```
+
+**Security Warning**: Only use this method for local testing. Never commit real tokens to Git!
+
+**Option B: Create Secret Manually (recommended for production)**
+
+Keep the Secret section in install.yaml with empty token value, then create it separately:
 
 ```bash
 kubectl apply -f install.yaml
-```
 
-**Create BSR Token Secret** (do NOT commit this to Git):
-
-```bash
 kubectl create secret generic bsr-token \
   --from-literal=token=YOUR_BSR_TOKEN_HERE \
-  -n protodiff-system
+  -n protodiff-system \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 Verify deployment:
@@ -88,7 +105,7 @@ Verify deployment:
 kubectl get pods -n protodiff-system
 ```
 
-**Security Note**: Never commit the Secret creation command or token to Git. Use environment variables, secret management tools (Sealed Secrets, External Secrets Operator, Vault), or store it in a `.env` file that's git-ignored.
+**Security Note**: For production, use secret management tools (Sealed Secrets, External Secrets Operator, Vault) instead of storing tokens in Git or plain kubectl commands.
 
 #### Alternative: Automated Installation
 
@@ -348,20 +365,37 @@ data:
   payment-service: "buf.build/acme/payment"
 ```
 
-#### 3. 배포
+#### 3. BSR 토큰 설정
 
-매니페스트 적용:
+**옵션 A: install.yaml 편집 (테스트/빠른 시작용)**
+
+install.yaml의 Secret 섹션을 찾아 토큰을 추가하세요:
+
+```yaml
+---
+# BSR 인증 토큰용 Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bsr-token
+  namespace: protodiff-system
+stringData:
+  token: "YOUR_BSR_TOKEN_HERE"  # 실제 토큰으로 교체
+```
+
+**보안 경고**: 이 방법은 로컬 테스트용으로만 사용하세요. 실제 토큰을 Git에 커밋하지 마세요!
+
+**옵션 B: Secret 수동 생성 (프로덕션 권장)**
+
+install.yaml의 Secret 섹션은 빈 토큰 값으로 유지하고, 별도로 생성하세요:
 
 ```bash
 kubectl apply -f install.yaml
-```
 
-**BSR 토큰 Secret 생성** (Git에 커밋하지 마세요):
-
-```bash
 kubectl create secret generic bsr-token \
   --from-literal=token=YOUR_BSR_TOKEN_HERE \
-  -n protodiff-system
+  -n protodiff-system \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 배포 확인:
@@ -370,7 +404,7 @@ kubectl create secret generic bsr-token \
 kubectl get pods -n protodiff-system
 ```
 
-**보안 주의사항**: Secret 생성 명령어나 토큰을 Git에 커밋하지 마세요. 환경 변수, 시크릿 관리 도구(Sealed Secrets, External Secrets Operator, Vault)를 사용하거나 `.env` 파일에 저장 후 git-ignore 처리하세요.
+**보안 주의사항**: 프로덕션 환경에서는 Git이나 평문 kubectl 명령어에 토큰을 저장하는 대신, 시크릿 관리 도구(Sealed Secrets, External Secrets Operator, Vault)를 사용하세요.
 
 #### 대안: 자동 설치
 

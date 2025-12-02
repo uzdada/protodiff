@@ -8,17 +8,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --info-color: #3b82f6;
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --border-color: #334155;
+            --primary-gradient: linear-gradient(135deg, #326CE5 0%, #2496ED 100%);
+            --success-color: #13C277;
+            --danger-color: #E8423F;
+            --warning-color: #F4B942;
+            --info-color: #326CE5;
+            --bg-primary: #0D1117;
+            --bg-secondary: #161B22;
+            --bg-tertiary: #21262D;
+            --text-primary: #E6EDF3;
+            --text-secondary: #7D8590;
+            --border-color: #30363D;
+            --accent-blue: #58A6FF;
+            --k8s-blue: #326CE5;
+            --docker-blue: #2496ED;
         }
 
         * {
@@ -32,6 +35,10 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
+        }
+
+        code, .service-name, .method-item {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
         }
 
         .header {
@@ -153,21 +160,24 @@
         }
 
         .badge-sync {
-            background: rgba(16, 185, 129, 0.2);
+            background: rgba(19, 194, 119, 0.15);
             color: var(--success-color);
             border: 1px solid var(--success-color);
+            font-weight: 700;
         }
 
         .badge-mismatch {
-            background: rgba(239, 68, 68, 0.2);
+            background: rgba(232, 66, 63, 0.15);
             color: var(--danger-color);
             border: 1px solid var(--danger-color);
+            font-weight: 700;
         }
 
         .badge-unknown {
-            background: rgba(245, 158, 11, 0.2);
+            background: rgba(244, 185, 66, 0.15);
             color: var(--warning-color);
             border: 1px solid var(--warning-color);
+            font-weight: 700;
         }
 
         .diff-details {
@@ -199,11 +209,18 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .info-badge:hover {
+            border-color: var(--accent-blue);
+            background: var(--bg-tertiary);
         }
 
         .info-badge strong {
-            color: var(--text-primary);
+            color: var(--accent-blue);
             margin-right: 0.5rem;
+            font-weight: 700;
         }
 
         .comparison-grid {
@@ -257,18 +274,21 @@
         }
 
         .badge-common {
-            background: rgba(16, 185, 129, 0.2);
+            background: rgba(19, 194, 119, 0.2);
             color: var(--success-color);
+            font-weight: 700;
         }
 
         .badge-live-only {
-            background: rgba(245, 158, 11, 0.2);
+            background: rgba(244, 185, 66, 0.2);
             color: var(--warning-color);
+            font-weight: 700;
         }
 
         .badge-bsr-only {
-            background: rgba(59, 130, 246, 0.2);
-            color: var(--info-color);
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent-blue);
+            font-weight: 700;
         }
 
         .section-title {
@@ -373,15 +393,15 @@
         }
 
         .alert-warning {
-            background: rgba(245, 158, 11, 0.1);
+            background: rgba(244, 185, 66, 0.1);
             border-color: var(--warning-color);
             color: var(--warning-color);
         }
 
         .alert-info {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: var(--info-color);
-            color: var(--info-color);
+            background: rgba(88, 166, 255, 0.1);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
         }
 
         .footer {
@@ -394,13 +414,15 @@
         }
 
         .footer a {
-            color: var(--info-color);
+            color: var(--accent-blue);
             text-decoration: none;
             transition: color 0.2s;
+            font-weight: 600;
         }
 
         .footer a:hover {
-            color: #60a5fa;
+            color: var(--k8s-blue);
+            text-decoration: underline;
         }
 
         .action-buttons {
@@ -600,7 +622,7 @@
                                     <div class="comparison-grid">
                                         <div class="comparison-panel">
                                             <div class="panel-header">
-                                                <i class="fas fa-server" style="color: #3b82f6;"></i>
+                                                <i class="fas fa-server" style="color: var(--docker-blue);"></i>
                                                 Live Services
                                             </div>
                                             {{if $result.SchemaDiff.LiveServices}}
@@ -625,7 +647,7 @@
 
                                         <div class="comparison-panel">
                                             <div class="panel-header">
-                                                <i class="fas fa-database" style="color: #8b5cf6;"></i>
+                                                <i class="fas fa-database" style="color: var(--k8s-blue);"></i>
                                                 BSR Services
                                             </div>
                                             {{if $result.SchemaDiff.BSRServices}}
@@ -686,10 +708,10 @@
                                         <div class="service-detail-header">
                                             <h6><i class="fas fa-cube"></i> {{.ServiceName}}</h6>
                                             <div>
-                                                <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: var(--info-color); margin-right: 0.5rem;">
+                                                <span class="badge" style="background: rgba(36, 150, 237, 0.2); color: var(--docker-blue); margin-right: 0.5rem; font-weight: 700;">
                                                     Live: {{.LiveMethods}}
                                                 </span>
-                                                <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #a78bfa;">
+                                                <span class="badge" style="background: rgba(50, 108, 229, 0.2); color: var(--k8s-blue); font-weight: 700;">
                                                     BSR: {{.BSRMethods}}
                                                 </span>
                                             </div>

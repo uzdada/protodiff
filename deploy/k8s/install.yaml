@@ -71,6 +71,23 @@ data:
   grpc-server-java: "buf.build/proto-diff-bsr/test-services"
 
 ---
+# Secret for BSR (Buf Schema Registry) authentication token
+# IMPORTANT: For quickstart/testing, you can leave this empty and create the secret manually later
+# For production, replace the empty token value with your actual BSR token from https://buf.build/settings/user
+# SECURITY WARNING: Never commit actual tokens to Git. Use external secret management tools in production.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bsr-token
+  namespace: protodiff-system
+  labels:
+    app.kubernetes.io/name: protodiff
+    app.kubernetes.io/component: config
+type: Opaque
+stringData:
+  token: ""  # Leave empty for quickstart. Create manually: kubectl create secret generic bsr-token --from-literal=token=YOUR_TOKEN -n protodiff-system
+
+---
 # Deployment for ProtoDiff
 apiVersion: apps/v1
 kind: Deployment
