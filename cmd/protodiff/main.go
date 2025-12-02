@@ -41,10 +41,6 @@ import (
 )
 
 const (
-	// Environment variable names
-	envUseMockBSR = "USE_MOCK_BSR"
-	envBSRToken   = "BSR_TOKEN"
-
 	// Graceful shutdown timeout
 	gracefulShutdownTimeout = 2 * time.Second
 )
