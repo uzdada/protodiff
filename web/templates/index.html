@@ -59,6 +59,139 @@
             font-size: 0.875rem;
             color: #6c757d;
         }
+        .diff-details {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+        }
+        .service-comparison {
+            background-color: white;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+        }
+        .service-header {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .method-table {
+            font-size: 0.875rem;
+        }
+        .method-table td {
+            padding: 0.5rem;
+        }
+        .method-row {
+            border-bottom: 1px solid #f1f3f5;
+        }
+        .method-name {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        .status-match {
+            color: #28a745;
+            font-weight: 600;
+        }
+        .status-missing {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        .status-extra {
+            color: #fd7e14;
+            font-weight: 600;
+        }
+        .status-info {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .section-title {
+            font-weight: 600;
+            color: #495057;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .info-badge.live {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #1976d2;
+        }
+        .info-badge.bsr {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+            border: 1px solid #7b1fa2;
+        }
+        .info-badge.common {
+            background-color: #e8f5e9;
+            color: #388e3c;
+            border: 1px solid #388e3c;
+        }
+        .info-badge.extra {
+            background-color: #fff3e0;
+            color: #f57c00;
+            border: 1px solid #f57c00;
+        }
+        .info-badge.missing {
+            background-color: #fce4ec;
+            color: #c2185b;
+            border: 1px solid #c2185b;
+        }
+        .expandable-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .expandable-row:hover {
+            background-color: #f8f9fa !important;
+        }
+        .summary-section {
+            margin-bottom: 1.5rem;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .comparison-column h6 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+            border-left: 3px solid;
+        }
+        .comparison-column.live h6 {
+            border-left-color: #1976d2;
+        }
+        .comparison-column.bsr h6 {
+            border-left-color: #7b1fa2;
+        }
+        .service-list {
+            list-style: none;
+            padding-left: 1rem;
+            margin: 0;
+        }
+        .service-list li {
+            padding: 0.35rem 0;
+            border-bottom: 1px solid #f1f3f5;
+        }
+        .service-list li:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -114,24 +247,204 @@
                 </thead>
                 <tbody>
                     {{if .Results}}
-                        {{range .Results}}
-                        <tr>
-                            <td><strong>{{.ServiceName}}</strong></td>
-                            <td><code>{{.PodName}}</code></td>
-                            <td>{{.PodNamespace}}</td>
-                            <td><small class="text-muted">{{.BSRModule}}</small></td>
+                        {{range $index, $result := .Results}}
+                        <tr class="expandable-row" data-bs-toggle="collapse" data-bs-target="#details-{{$index}}">
+                            <td><strong>{{$result.ServiceName}}</strong></td>
+                            <td><code>{{$result.PodName}}</code></td>
+                            <td>{{$result.PodNamespace}}</td>
+                            <td><small class="text-muted">{{$result.BSRModule}}</small></td>
                             <td>
-                                {{if eq .Status "SYNC"}}
+                                {{if eq $result.Status "SYNC"}}
                                     <span class="badge badge-sync">✓ SYNC</span>
-                                {{else if eq .Status "MISMATCH"}}
+                                {{else if eq $result.Status "MISMATCH"}}
                                     <span class="badge badge-mismatch">✗ MISMATCH</span>
                                 {{else}}
                                     <span class="badge badge-unknown">? UNKNOWN</span>
                                 {{end}}
                             </td>
-                            <td><small>{{.LastChecked.Format "15:04:05"}}</small></td>
-                            <td><small class="text-muted">{{.Message}}</small></td>
+                            <td><small>{{$result.LastChecked.Format "15:04:05"}}</small></td>
+                            <td><small class="text-muted">{{$result.Message}}</small></td>
                         </tr>
+                        {{if $result.SchemaDiff}}
+                        <tr class="collapse" id="details-{{$index}}">
+                            <td colspan="7" class="p-0">
+                                <div class="diff-details">
+                                    <h5 class="mb-3">📊 상세 스키마 비교 정보</h5>
+
+                                    <!-- Summary Section -->
+                                    <div class="summary-section">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="info-badge live">
+                                                    <strong>Live 서비스:</strong> {{len $result.SchemaDiff.LiveServices}}개
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="info-badge bsr">
+                                                    <strong>BSR 서비스:</strong> {{len $result.SchemaDiff.BSRServices}}개
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="info-badge common">
+                                                    <strong>공통 서비스:</strong>
+                                                    {{$common := 0}}
+                                                    {{range $liveSvc := $result.SchemaDiff.LiveServices}}
+                                                        {{range $bsrSvc := $result.SchemaDiff.BSRServices}}
+                                                            {{if eq $liveSvc $bsrSvc}}{{$common = add $common 1}}{{end}}
+                                                        {{end}}
+                                                    {{end}}
+                                                    {{$common}}개
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Service Comparison Grid -->
+                                    <div class="comparison-grid">
+                                        <div class="comparison-column live">
+                                            <h6>🔵 Live 서비스 목록</h6>
+                                            {{if $result.SchemaDiff.LiveServices}}
+                                            <ul class="service-list">
+                                                {{range $result.SchemaDiff.LiveServices}}
+                                                <li>
+                                                    <code>{{.}}</code>
+                                                    {{$isCommon := false}}
+                                                    {{range $bsrSvc := $result.SchemaDiff.BSRServices}}
+                                                        {{if eq . $bsrSvc}}{{$isCommon = true}}{{end}}
+                                                    {{end}}
+                                                    {{if $isCommon}}
+                                                        <span class="badge bg-success ms-2">공통</span>
+                                                    {{else}}
+                                                        <span class="badge bg-warning ms-2">Live 전용</span>
+                                                    {{end}}
+                                                </li>
+                                                {{end}}
+                                            </ul>
+                                            {{else}}
+                                            <p class="text-muted ms-3">서비스 없음</p>
+                                            {{end}}
+                                        </div>
+
+                                        <div class="comparison-column bsr">
+                                            <h6>🟣 BSR 서비스 목록</h6>
+                                            {{if $result.SchemaDiff.BSRServices}}
+                                            <ul class="service-list">
+                                                {{range $result.SchemaDiff.BSRServices}}
+                                                <li>
+                                                    <code>{{.}}</code>
+                                                    {{$isCommon := false}}
+                                                    {{range $liveSvc := $result.SchemaDiff.LiveServices}}
+                                                        {{if eq . $liveSvc}}{{$isCommon = true}}{{end}}
+                                                    {{end}}
+                                                    {{if $isCommon}}
+                                                        <span class="badge bg-success ms-2">공통</span>
+                                                    {{else}}
+                                                        <span class="badge bg-info ms-2">BSR 전용</span>
+                                                    {{end}}
+                                                </li>
+                                                {{end}}
+                                            </ul>
+                                            {{else}}
+                                            <p class="text-muted ms-3">서비스 없음</p>
+                                            {{end}}
+                                        </div>
+                                    </div>
+
+                                    <!-- Extra and Missing Services -->
+                                    {{if or $result.SchemaDiff.ExtraInLive $result.SchemaDiff.MissingInLive}}
+                                    <div class="section-title">ℹ️ 비교 대상이 아닌 서비스 (정보성)</div>
+                                    <div class="row mb-3">
+                                        {{if $result.SchemaDiff.ExtraInLive}}
+                                        <div class="col-md-6">
+                                            <div class="alert alert-warning mb-2">
+                                                <strong>Live에만 존재 (비교 안 함):</strong><br>
+                                                {{range $i, $svc := $result.SchemaDiff.ExtraInLive}}
+                                                    {{if $i}}, {{end}}<code>{{$svc}}</code>
+                                                {{end}}
+                                                <div class="mt-2"><small class="text-muted">이 서비스들은 BSR에 없어 비교하지 않습니다</small></div>
+                                            </div>
+                                        </div>
+                                        {{end}}
+                                        {{if $result.SchemaDiff.MissingInLive}}
+                                        <div class="col-md-6">
+                                            <div class="alert alert-info mb-2">
+                                                <strong>BSR에만 존재 (비교 안 함):</strong><br>
+                                                {{range $i, $svc := $result.SchemaDiff.MissingInLive}}
+                                                    {{if $i}}, {{end}}<code>{{$svc}}</code>
+                                                {{end}}
+                                                <div class="mt-2"><small class="text-muted">이 서비스들은 Live에 없어 비교하지 않습니다</small></div>
+                                            </div>
+                                        </div>
+                                        {{end}}
+                                    </div>
+                                    {{end}}
+
+                                    <!-- Method-level Comparison for Common Services -->
+                                    {{if $result.SchemaDiff.MethodMismatches}}
+                                    <div class="section-title">❌ 메서드 불일치 (공통 서비스)</div>
+                                    {{range $mismatch := $result.SchemaDiff.MethodMismatches}}
+                                    <div class="service-comparison">
+                                        <div class="service-header">
+                                            {{$mismatch.ServiceName}}
+                                            <span class="badge bg-primary ms-2">Live: {{$mismatch.LiveMethods}} 메서드</span>
+                                            <span class="badge bg-secondary ms-2">BSR: {{$mismatch.BSRMethods}} 메서드</span>
+                                        </div>
+
+                                        <table class="table table-sm method-table mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 50%">메서드명</th>
+                                                    <th style="width: 25%">Live</th>
+                                                    <th style="width: 25%">BSR</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {{if $mismatch.MissingMethods}}
+                                                    {{range $mismatch.MissingMethods}}
+                                                    <tr class="method-row">
+                                                        <td><code class="method-name">{{.}}</code></td>
+                                                        <td class="status-missing">✗ 없음</td>
+                                                        <td class="status-match">✓ 존재</td>
+                                                    </tr>
+                                                    {{end}}
+                                                {{end}}
+                                                {{if $mismatch.ExtraMethods}}
+                                                    {{range $mismatch.ExtraMethods}}
+                                                    <tr class="method-row">
+                                                        <td><code class="method-name">{{.}}</code></td>
+                                                        <td class="status-match">✓ 존재</td>
+                                                        <td class="status-missing">✗ 없음</td>
+                                                    </tr>
+                                                    {{end}}
+                                                {{end}}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {{end}}
+                                    {{else}}
+                                    <!-- No mismatches - show all matched services -->
+                                    <div class="section-title">✅ 일치하는 서비스 (공통 서비스 메서드 비교)</div>
+                                    {{range $liveSvc := $result.SchemaDiff.LiveServices}}
+                                        {{$isCommon := false}}
+                                        {{range $bsrSvc := $result.SchemaDiff.BSRServices}}
+                                            {{if eq $liveSvc $bsrSvc}}{{$isCommon = true}}{{end}}
+                                        {{end}}
+                                        {{if $isCommon}}
+                                        <div class="service-comparison">
+                                            <div class="service-header text-success">
+                                                ✓ {{$liveSvc}}
+                                                <span class="badge bg-success ms-2">메서드 완전 일치</span>
+                                            </div>
+                                            <p class="mb-0 text-muted ms-3">Live와 BSR의 모든 메서드가 일치합니다</p>
+                                        </div>
+                                        {{end}}
+                                    {{end}}
+                                    {{end}}
+
+                                </div>
+                            </td>
+                        </tr>
+                        {{end}}
                         {{end}}
                     {{else}}
                         <tr>
@@ -164,5 +477,16 @@
     <button class="btn btn-primary btn-lg refresh-btn" onclick="location.reload()">
         🔄 Refresh
     </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+
+        // Add template function for addition
+        {{define "add"}}{{add . 1}}{{end}}
+    </script>
 </body>
 </html>

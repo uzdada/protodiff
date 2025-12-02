@@ -204,15 +204,18 @@ func (s *Scanner) fetchAndCompareSchemas(ctx context.Context, pod k8s.PodInfo, b
 	}
 	log.Printf("BSR schema fetched: %d services, %d messages", len(truthSchema.Services), len(truthSchema.Messages))
 
-	// Compare schemas
-	if s.schemasMatch(liveSchema, truthSchema) {
+	// Compare schemas and get detailed diff
+	match, diff := s.compareSchemas(liveSchema, truthSchema)
+	result.SchemaDiff = diff
+
+	if match {
 		result.Status = domain.StatusSync
 		result.Message = "Schemas are in sync"
 		log.Printf("✓ Schemas match for %s/%s", pod.Namespace, pod.Name)
 	} else {
 		result.Status = domain.StatusMismatch
-		result.Message = "Schema drift detected"
-		log.Printf("✗ Schema mismatch for %s/%s", pod.Namespace, pod.Name)
+		result.Message = s.buildDiffMessage(diff)
+		log.Printf("✗ Schema mismatch for %s/%s: %s", pod.Namespace, pod.Name, result.Message)
 	}
 }
 
@@ -231,36 +234,172 @@ func (s *Scanner) resolveBSRModule(serviceName string, mappings domain.ServiceMa
 	return ""
 }
 
-// schemasMatch compares two schema descriptors
-func (s *Scanner) schemasMatch(live, truth *domain.SchemaDescriptor) bool {
+// compareSchemas compares two schema descriptors and returns match status with detailed diff.
+// Only compares services that exist in BOTH live and BSR (intersection).
+// Services that exist only in live or only in BSR are tracked but don't affect sync status.
+func (s *Scanner) compareSchemas(live, truth *domain.SchemaDescriptor) (bool, *domain.SchemaDiff) {
+	diff := &domain.SchemaDiff{
+		LiveServices: []string{},
+		BSRServices:  []string{},
+		MissingInLive: []string{},
+		ExtraInLive: []string{},
+		MethodMismatches: []domain.ServiceMethodMismatch{},
+	}
+
 	// Validate inputs are not nil
 	if live == nil || truth == nil {
-		return false
+		return false, diff
 	}
 
-	// Simple comparison: check if service names and methods match
-	if len(live.Services) != len(truth.Services) {
-		return false
+	// Create maps for comparison
+	liveServicesMap := make(map[string][]string)
+	truthServicesMap := make(map[string][]string)
+
+	// Populate live services
+	for _, svc := range live.Services {
+		diff.LiveServices = append(diff.LiveServices, svc.Name)
+		liveServicesMap[svc.Name] = svc.Methods
 	}
 
-	// Create a map of truth services for quick lookup
-	truthServices := make(map[string][]string)
+	// Populate truth services
 	for _, svc := range truth.Services {
-		truthServices[svc.Name] = svc.Methods
+		diff.BSRServices = append(diff.BSRServices, svc.Name)
+		truthServicesMap[svc.Name] = svc.Methods
 	}
 
-	// Check if all live services exist in truth and have matching methods
-	for _, liveSvc := range live.Services {
-		truthMethods, exists := truthServices[liveSvc.Name]
-		if !exists {
-			return false
-		}
+	match := true
 
-		// Compare methods (simple length check for MVP)
-		if len(liveSvc.Methods) != len(truthMethods) {
+	// Track services in live but not in BSR (informational only, doesn't affect match)
+	for liveSvcName := range liveServicesMap {
+		if _, exists := truthServicesMap[liveSvcName]; !exists {
+			diff.ExtraInLive = append(diff.ExtraInLive, liveSvcName)
+			// NOTE: Extra services in live are OK - they're not compared
+		}
+	}
+
+	// Track services in BSR but not in live (informational only, doesn't affect match)
+	for truthSvcName := range truthServicesMap {
+		if _, exists := liveServicesMap[truthSvcName]; !exists {
+			diff.MissingInLive = append(diff.MissingInLive, truthSvcName)
+			// NOTE: Missing services are OK - we only compare intersection
+		}
+	}
+
+	// ONLY compare services that exist in BOTH live and BSR
+	for liveSvcName, liveMethods := range liveServicesMap {
+		if truthMethods, exists := truthServicesMap[liveSvcName]; exists {
+			// This service exists in both - compare methods
+			if !s.methodsMatch(liveMethods, truthMethods) {
+				missing, extra := s.diffMethods(liveMethods, truthMethods)
+				diff.MethodMismatches = append(diff.MethodMismatches, domain.ServiceMethodMismatch{
+					ServiceName:    liveSvcName,
+					LiveMethods:    len(liveMethods),
+					BSRMethods:     len(truthMethods),
+					MissingMethods: missing,
+					ExtraMethods:   extra,
+				})
+				match = false // Only method mismatches cause MISMATCH status
+			}
+		}
+	}
+
+	return match, diff
+}
+
+// methodsMatch checks if two method slices are equal
+func (s *Scanner) methodsMatch(live, truth []string) bool {
+	if len(live) != len(truth) {
+		return false
+	}
+
+	// Create a map for quick lookup
+	truthMap := make(map[string]bool)
+	for _, method := range truth {
+		truthMap[method] = true
+	}
+
+	// Check all live methods exist in truth
+	for _, method := range live {
+		if !truthMap[method] {
 			return false
 		}
 	}
 
 	return true
+}
+
+// diffMethods returns missing and extra methods
+func (s *Scanner) diffMethods(live, truth []string) (missing []string, extra []string) {
+	liveMap := make(map[string]bool)
+	truthMap := make(map[string]bool)
+
+	for _, m := range live {
+		liveMap[m] = true
+	}
+	for _, m := range truth {
+		truthMap[m] = true
+	}
+
+	// Find missing methods (in truth but not in live)
+	for _, m := range truth {
+		if !liveMap[m] {
+			missing = append(missing, m)
+		}
+	}
+
+	// Find extra methods (in live but not in truth)
+	for _, m := range live {
+		if !truthMap[m] {
+			extra = append(extra, m)
+		}
+	}
+
+	return missing, extra
+}
+
+// buildDiffMessage creates a human-readable diff message
+func (s *Scanner) buildDiffMessage(diff *domain.SchemaDiff) string {
+	if diff == nil {
+		return "Schema drift detected"
+	}
+
+	var msg strings.Builder
+
+	// Count services in both (intersection)
+	commonServices := 0
+	for _, liveSvc := range diff.LiveServices {
+		for _, bsrSvc := range diff.BSRServices {
+			if liveSvc == bsrSvc {
+				commonServices++
+				break
+			}
+		}
+	}
+
+	if len(diff.MethodMismatches) > 0 {
+		msg.WriteString("Method mismatches: ")
+		for i, mismatch := range diff.MethodMismatches {
+			if i > 0 {
+				msg.WriteString("; ")
+			}
+			msg.WriteString(fmt.Sprintf("%s (live:%d, BSR:%d)",
+				mismatch.ServiceName, mismatch.LiveMethods, mismatch.BSRMethods))
+
+			if len(mismatch.MissingMethods) > 0 {
+				msg.WriteString(fmt.Sprintf(" missing:%s", strings.Join(mismatch.MissingMethods, ",")))
+			}
+			if len(mismatch.ExtraMethods) > 0 {
+				msg.WriteString(fmt.Sprintf(" extra:%s", strings.Join(mismatch.ExtraMethods, ",")))
+			}
+		}
+		return msg.String()
+	}
+
+	// No method mismatches - schemas are in sync
+	if commonServices > 0 {
+		return fmt.Sprintf("All %d common service(s) in sync", commonServices)
+	}
+
+	// No common services to compare
+	return "No common services to compare"
 }

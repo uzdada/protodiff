@@ -402,14 +402,18 @@ protodiff/
 │   │   ├── domain/             # 비즈니스 모델
 │   │   └── store/              # Thread-safe 인메모리 저장소
 │   ├── adapters/
-│   │   ├── k8s/                # Kubernetes 클라이언트
+│   │   ├── k8s/                # Kubernetes 클라이언트 (자동 포트 감지)
 │   │   ├── grpc/               # gRPC 리플렉션 클라이언트
-│   │   ├── bsr/                # BSR API 클라이언트
+│   │   ├── bsr/                # BSR 클라이언트 (buf CLI & HTTP)
 │   │   └── web/                # HTTP 서버 & 대시보드
 │   └── scanner/                # 스키마 검증 오케스트레이터
 ├── web/templates/              # HTML 대시보드 템플릿
 └── deploy/k8s/                 # Kubernetes 매니페스트
 ```
+
+**BSR 통합 방식:**
+- **BufClient** (기본값): 안정적인 스키마 가져오기를 위해 `buf export` CLI 사용
+- **HTTPClient** (실험적): 직접 BSR API 접근 (프로덕션 미지원)
 
 ### 동작 방식
 
@@ -473,6 +477,28 @@ make fmt           # 코드 포맷
 make lint          # 린터 실행
 ```
 
+### 기술 세부사항
+
+#### 포트 자동 감지
+
+ProtoDiff는 Pod 컨테이너 스펙에서 자동으로 gRPC 포트를 감지합니다:
+- Pod의 `containerPort` 정의를 스캔
+- "grpc" 이름 또는 TCP 프로토콜 사용 포트 검색
+- 지정되지 않은 경우 기본 포트 9090으로 폴백
+
+**예시:**
+```yaml
+ports:
+  - name: grpc
+    containerPort: 9091  # 자동으로 감지됨
+```
+
+#### 다중 아키텍처 지원
+
+모든 구성요소가 AMD64와 ARM64 아키텍처를 모두 지원합니다:
+- Docker 이미지는 `docker buildx --platform linux/amd64,linux/arm64`로 빌드
+- 지원 환경: x86_64 Linux, Apple Silicon (M1/M2), AWS Graviton
+
 ### 문제 해결
 
 #### 서비스가 발견되지 않음
@@ -482,7 +508,7 @@ make lint          # 린터 실행
 **해결 방법**:
 - ConfigMap에 서비스가 나열되어 있는지 확인: `kubectl get configmap protodiff-mapping -n protodiff-system -o yaml`
 - 서비스 Pod에 ConfigMap의 서비스명과 일치하는 `app` 레이블이 있는지 확인
-- ProtoDiff 로그 확인: `make logs`
+- ProtoDiff 로그 확인: `kubectl logs -n protodiff-system -l app.kubernetes.io/name=protodiff`
 - Pod가 `Running` 상태인지 확인
 
 #### 스키마 가져오기 실패
@@ -492,7 +518,22 @@ make lint          # 린터 실행
 **해결 방법**:
 - 서비스에서 gRPC 리플렉션이 활성화되어 있는지 확인
 - ProtoDiff Pod에서 Pod IP에 접근 가능한지 확인
-- gRPC 포트가 올바른지 확인 (기본값: 9090)
+- gRPC 포트가 올바른지 확인 (containerPort에서 자동 감지 또는 기본값 9090)
+- "Connection refused" 오류는 로그에서 확인
+
+#### BSR Export 실패
+
+**문제**: "buf export failed: read-only file system"
+
+**해결 방법**: 최신 배포 매니페스트에서 이미 수정되었습니다. 배포에는 다음이 포함됩니다:
+- 쓰기 가능한 `/tmp` 볼륨 마운트 (`emptyDir`)
+- buf CLI 캐시를 위한 `HOME=/tmp` 환경 변수
+
+이전 매니페스트를 사용 중이라면 업데이트하세요:
+```bash
+curl -O https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.yaml
+kubectl apply -f install.yaml
+```
 
 #### BSR 매핑을 찾을 수 없음
 
@@ -501,7 +542,7 @@ make lint          # 린터 실행
 **해결 방법**:
 - `protodiff-mapping` ConfigMap에 서비스 매핑 추가
 - `DEFAULT_BSR_TEMPLATE` 환경 변수 설정
-- ConfigMap 변경 후 ProtoDiff Pod 재시작
+- ConfigMap 변경 후 ProtoDiff Pod 재시작: `kubectl rollout restart deployment/protodiff -n protodiff-system`
 
 ### 기여
 
