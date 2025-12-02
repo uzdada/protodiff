@@ -38,13 +38,21 @@ type SchemaDiff struct {
 	ExtraInLive []string `json:"extra_in_live,omitempty"`
 	// MethodMismatches are services with different methods
 	MethodMismatches []ServiceMethodMismatch `json:"method_mismatches,omitempty"`
+	// MatchedServices are services with matching methods
+	MatchedServices []ServiceMethodMatch `json:"matched_services,omitempty"`
 }
 
 // ServiceMethodMismatch represents a method count mismatch for a service
 type ServiceMethodMismatch struct {
-	ServiceName    string `json:"service_name"`
-	LiveMethods    int    `json:"live_methods"`
-	BSRMethods     int    `json:"bsr_methods"`
+	ServiceName    string   `json:"service_name"`
+	LiveMethods    int      `json:"live_methods"`
+	BSRMethods     int      `json:"bsr_methods"`
 	MissingMethods []string `json:"missing_methods,omitempty"`
 	ExtraMethods   []string `json:"extra_methods,omitempty"`
+}
+
+// ServiceMethodMatch represents a service with matching methods
+type ServiceMethodMatch struct {
+	ServiceName string   `json:"service_name"`
+	Methods     []string `json:"methods"`
 }

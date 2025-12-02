@@ -239,11 +239,12 @@ func (s *Scanner) resolveBSRModule(serviceName string, mappings domain.ServiceMa
 // Services that exist only in live or only in BSR are tracked but don't affect sync status.
 func (s *Scanner) compareSchemas(live, truth *domain.SchemaDescriptor) (bool, *domain.SchemaDiff) {
 	diff := &domain.SchemaDiff{
-		LiveServices: []string{},
-		BSRServices:  []string{},
-		MissingInLive: []string{},
-		ExtraInLive: []string{},
+		LiveServices:     []string{},
+		BSRServices:      []string{},
+		MissingInLive:    []string{},
+		ExtraInLive:      []string{},
 		MethodMismatches: []domain.ServiceMethodMismatch{},
+		MatchedServices:  []domain.ServiceMethodMatch{},
 	}
 
 	// Validate inputs are not nil
@@ -299,6 +300,12 @@ func (s *Scanner) compareSchemas(live, truth *domain.SchemaDescriptor) (bool, *d
 					ExtraMethods:   extra,
 				})
 				match = false // Only method mismatches cause MISMATCH status
+			} else {
+				// Methods match - store matched service with methods
+				diff.MatchedServices = append(diff.MatchedServices, domain.ServiceMethodMatch{
+					ServiceName: liveSvcName,
+					Methods:     liveMethods,
+				})
 			}
 		}
 	}
