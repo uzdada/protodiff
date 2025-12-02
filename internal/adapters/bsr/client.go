@@ -5,7 +5,6 @@
 //
 // The Client interface allows for easy swapping between implementations:
 //   - HTTPClient: Production client that makes real HTTP requests to BSR API
-//   - MockClient: Test client with pre-configured schemas
 //
 // Example usage:
 //
