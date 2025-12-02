@@ -122,6 +122,10 @@ spec:
               value: ":8080"
             - name: SCAN_INTERVAL
               value: "30s"
+
+            # Set HOME to /tmp for buf CLI cache
+            - name: HOME
+              value: "/tmp"
           livenessProbe:
             httpGet:
               path: /health
@@ -149,6 +153,12 @@ spec:
             capabilities:
               drop:
                 - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
 
 ---
 # Service to expose ProtoDiff dashboard

@@ -20,10 +20,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     ./cmd/protodiff
 
 # Final stage
-FROM scratch
+FROM alpine:latest
 
-# Copy CA certificates for HTTPS requests
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# Install buf CLI and runtime dependencies
+RUN apk add --no-cache ca-certificates && \
+    wget -O /usr/local/bin/buf https://github.com/bufbuild/buf/releases/download/v1.28.1/buf-Linux-$(uname -m) && \
+    chmod +x /usr/local/bin/buf
 
 # Copy the binary
 COPY --from=builder /build/protodiff /protodiff
