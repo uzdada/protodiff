@@ -67,10 +67,13 @@ func main() {
 
 	// Initialize BSR client
 	var bsrClient bsr.Client
-
-	bsrClient = bsr.NewBufClient()
-
-	log.Println("BSR client initialized (buf CLI mode)")
+	if cfg.UseMockBSR {
+		bsrClient = bsr.NewMockClient()
+		log.Println("BSR client initialized (mock mode)")
+	} else {
+		bsrClient = bsr.NewBufClient()
+		log.Println("BSR client initialized (buf CLI mode)")
+	}
 
 	// Initialize web server
 	webServer, err := web.NewServer(dataStore, cfg.WebAddr)
