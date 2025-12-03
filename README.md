@@ -102,12 +102,12 @@ graph TD
     subgraph K8s_Cluster [Kubernetes Cluster]
         subgraph ProtoDiff_Namespace [Namespace: protodiff-system]
             PD[ProtoDiff Agent]
-            CM[ConfigMap<br/>(Service Mapping)]
-            Secret[Secret<br/>(BSR Token)]
+            CM[ConfigMap<br/>Service Mapping]
+            Secret[Secret<br/>BSR Token]
         end
 
         subgraph App_Namespace [Namespace: default/others]
-            PodA[Service A<br/>(Go/Java etc.)]
+            PodA[Service A<br/>Go/Java etc.]
             PodB[Service B]
         end
         
@@ -115,17 +115,17 @@ graph TD
     end
 
     subgraph External
-        BSR[Buf Schema Registry<br/>(Truth Source)]
+        BSR[Buf Schema Registry<br/>Truth Source]
         User((User))
     end
 
     %% Discovery Flow
-    PD -- 1. Watch Pods (Labels) --> K8sAPI
+    PD -- 1. Watch Pods Labels --> K8sAPI
     PD -- 2. Load Config --> CM & Secret
 
     %% Validation Flow
-    PD -- 3. Fetch Live Schema<br/>(gRPC Reflection) --> PodA & PodB
-    PD -- 4. Fetch Truth Schema<br/>(buf export) --> BSR
+    PD -- 3. Fetch Live Schema<br/>gRPC Reflection --> PodA & PodB
+    PD -- 4. Fetch Truth Schema<br/>buf export --> BSR
 
     %% Visualization
     User -- 5. View Dashboard --> PD
