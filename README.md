@@ -33,7 +33,7 @@ ProtoDiff is a Kubernetes-native monitoring tool designed to detect schema drift
 ### Quick Demo
 
 Want to try ProtoDiff immediately without integrating it into your existing services?
-Check out the **[Quickstart Demo](https://www.google.com/search?q=./examples/SAMPLE_QUICKSTART.md)** to run a complete sandbox environment.
+Check out the **[Quickstart Demo](./examples/SAMPLE_QUICKSTART.md)** to run a complete sandbox environment.
 
 -----
 
@@ -89,13 +89,52 @@ Once deployed, forward the port to access the web interface:
 kubectl port-forward -n protodiff-system svc/protodiff 18080:80
 ```
 
-Open your browser to [http://localhost:18080](https://www.google.com/search?q=http://localhost:18080).
+Open your browser to [http://localhost:18080](http://localhost:18080).
 
 -----
 
 ### Architecture
 
 ProtoDiff follows the Hexagonal Architecture pattern for separation of concerns and testability.
+
+```mermaid
+graph TD
+    subgraph K8s_Cluster [Kubernetes Cluster]
+        subgraph ProtoDiff_Namespace [Namespace: protodiff-system]
+            PD[ProtoDiff Agent]
+            CM[ConfigMap<br/>(Service Mapping)]
+            Secret[Secret<br/>(BSR Token)]
+        end
+
+        subgraph App_Namespace [Namespace: default/others]
+            PodA[Service A<br/>(Go/Java etc.)]
+            PodB[Service B]
+        end
+        
+        K8sAPI[K8s API]
+    end
+
+    subgraph External
+        BSR[Buf Schema Registry<br/>(Truth Source)]
+        User((User))
+    end
+
+    %% Discovery Flow
+    PD -- 1. Watch Pods (Labels) --> K8sAPI
+    PD -- 2. Load Config --> CM & Secret
+
+    %% Validation Flow
+    PD -- 3. Fetch Live Schema<br/>(gRPC Reflection) --> PodA & PodB
+    PD -- 4. Fetch Truth Schema<br/>(buf export) --> BSR
+
+    %% Visualization
+    User -- 5. View Dashboard --> PD
+
+    %% Styling
+    style PD fill:#f96,stroke:#333,stroke-width:2px,color:white
+    style BSR fill:#fff,stroke:#333,stroke-dasharray: 5 5
+    style K8s_Cluster fill:#f0f7ff,stroke:#333,stroke-dasharray: 5 5
+```
 
 ```
 protodiff/
@@ -201,11 +240,11 @@ make docker-build  # Build Docker image
 
 ### Contributing
 
-Contributions are welcome\! Please see [CONTRIBUTING.md](https://www.google.com/search?q=CONTRIBUTING.md) for details.
+Contributions are welcome\! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ### License
 
-This project is licensed under the Apache License 2.0. See [LICENSE](https://www.google.com/search?q=LICENSE) for details.
+This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
 
 ### Contact
 
