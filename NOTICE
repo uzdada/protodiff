@@ -1,0 +1,62 @@
+ProtoDiff
+Copyright 2025 ProtoDiff Authors
+
+This product includes software developed by the ProtoDiff project
+(https://github.com/uzdada/protodiff).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+================================================================================
+
+This product includes third-party software:
+
+================================================================================
+Kubernetes (k8s.io/*)
+Copyright The Kubernetes Authors
+Licensed under the Apache License 2.0
+https://github.com/kubernetes/kubernetes
+
+================================================================================
+gRPC (google.golang.org/grpc)
+Copyright 2014 gRPC authors
+Licensed under the Apache License 2.0
+https://github.com/grpc/grpc-go
+
+================================================================================
+Protocol Buffers (google.golang.org/protobuf)
+Copyright 2008 Google Inc.
+Licensed under the BSD 3-Clause License
+https://github.com/protocolbuffers/protobuf-go
+
+================================================================================
+protoreflect (github.com/jhump/protoreflect)
+Copyright 2017 Josh Humphries
+Licensed under the Apache License 2.0
+https://github.com/jhump/protoreflect
+
+================================================================================
+protocompile (github.com/bufbuild/protocompile)
+Copyright 2020-2023 Buf Technologies, Inc.
+Licensed under the Apache License 2.0
+https://github.com/bufbuild/protocompile
+
+================================================================================
+Go standard libraries (golang.org/x/*)
+Copyright The Go Authors
+Licensed under the BSD 3-Clause License
+https://go.dev/
+
+================================================================================
+
+For a complete list of dependencies and their licenses, see go.mod and
+run `go list -m all` in the project directory.
