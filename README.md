@@ -15,54 +15,59 @@
 
 ### Overview
 
-ProtoDiff is a Kubernetes-native monitoring tool that runs inside your cluster to automatically detect schema drift between live gRPC services and the Buf Schema Registry (BSR). Deployed as a lightweight agent in your Kubernetes environment, it continuously validates schema consistency across your microservices without requiring any changes to your existing services.
+**Ever deployed a gRPC service update and forgot to sync your schema registry?**
 
-### Key Features
+ProtoDiff is here to save you from that nightmare. It's a Kubernetes-native monitoring tool that automatically catches schema drift between your running gRPC services and the Buf Schema Registry (BSR) - **before it breaks production**.
 
-- **Non-Invasive Design**: Zero changes required to existing microservices (no sidecars, no YAML modifications)
-- **Visual Dashboard**: Built-in HTML dashboard accessible via `kubectl port-forward`
-- **Centralized Configuration**: Service-to-BSR mappings managed through ConfigMap
-- **Automatic Discovery**: Discovers gRPC pods using Kubernetes labels
-- **gRPC Reflection**: Uses server reflection to fetch live schemas
-- **Real-time Monitoring**: Continuous validation with configurable scan intervals
-- **Clear Status Indicators**: Traffic light UI (Green=Sync, Red=Mismatch, Yellow=Unknown)
+Think of it as your **schema consistency guardian**: a lightweight agent that lives in your cluster, continuously validates your microservices, and alerts you the moment things go out of sync. No sidecars, no code changes, no hassle - just deploy and forget.
 
-### Prerequisites
+### Why You'll Love It
 
-- Kubernetes cluster (v1.25+)
-- kubectl configured to access your cluster
-- gRPC services with server reflection enabled
-- **BSR Token** (required for BSR schema validation)
-  - Sign up at https://buf.build
-  - Get your token from https://buf.build/settings/user
-  - Click "Create Token" and save it securely
-  - **Note**: Public BSR modules can be accessed without a token
+- 🚀 **Zero-Touch Deployment**: No sidecars, no service changes, no code modifications - just deploy and it works
+- 📊 **Visual Dashboard**: See all your services at a glance with a clean, built-in web UI
+- ⚙️ **Dead Simple Config**: Map services to BSR modules in one ConfigMap - that's it
+- 🔍 **Auto-Discovery**: Point it at your cluster and it finds all your gRPC services automatically
+- ⚡ **Real-Time Alerts**: Know within 30 seconds when schemas drift (configurable)
+- 🎯 **Crystal Clear Status**: Traffic light indicators - Green (✓ synced), Red (✗ drift), Yellow (? unknown)
+- 🔧 **Production Ready**: Multi-arch support (AMD64/ARM64), proven in real clusters
+
+### What You'll Need
+
+- **Kubernetes cluster** (v1.25 or newer)
+- **kubectl** configured and working
+- **gRPC services** with server reflection enabled (most frameworks support this)
+- **BSR Token** (for private schemas - public modules work without it)
+  - Get yours free at https://buf.build/settings/user
+  - Takes 30 seconds to create
+  - **Tip**: Testing with public modules? Skip the token entirely!
 
 ### Quick Start
 
-#### 1. Get Your BSR Token
+> **Want to try it first?** Check out the [**one-command demo**](examples/SAMPLE_QUICKSTART.md) - sets up everything in 60 seconds!
 
-Visit https://buf.build/settings/user and create an API token. Keep it secure - you'll need it in step 3.
+#### 1. Get Your BSR Token (Optional for Public Modules)
 
-#### 2. Download and Configure Service Mappings
+Grab a free API token from https://buf.build/settings/user - takes 30 seconds. Testing with public BSR modules? Skip this step!
 
-Download the installation manifest:
+#### 2. Download & Configure
+
+Grab the installation manifest:
 
 ```bash
 curl -O https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.yaml
 ```
 
-Edit the ConfigMap section to map your services to BSR modules:
+Open it up and configure your services (around line 69-71):
 
 ```bash
-vi install.yaml  # or use your preferred editor
+vi install.yaml
 ```
 
-**Configure Service Mappings** (around line 69-71):
+Tell ProtoDiff which services to monitor:
 ```yaml
 data:
-  user-service: "buf.build/acme/user"        # Replace with your services
-  order-service: "buf.build/acme/order"      # Add more as needed
+  user-service: "buf.build/acme/user"        # Your service → Your BSR module
+  order-service: "buf.build/acme/order"      # Add as many as you need
   payment-service: "buf.build/acme/payment"
 ```
 
@@ -298,15 +303,21 @@ kubectl apply -f install.yaml
 
 ### Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+We'd love your help making ProtoDiff even better! Found a bug? Have a brilliant idea? Check out [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
+
+**If this project helps you** ⭐ please star the repo - it really motivates us!
 
 ### License
 
-This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
+This project is licensed under Apache License 2.0. Feel free to use it! See [LICENSE](LICENSE) for details.
 
 ### Contact
 
-- GitHub Issues: https://github.com/uzdada/protodiff/issues
+- Issues/Questions/Suggestions: https://github.com/uzdada/protodiff/issues
+
+---
+
+**Let ProtoDiff guard your microservices!** 🛡️
 
 ---
 
@@ -314,54 +325,59 @@ This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) fo
 
 ### 개요
 
-ProtoDiff는 Kubernetes 클러스터 내부에서 실행되는 네이티브 모니터링 도구로, 실행 중인 gRPC 서비스와 Buf Schema Registry(BSR) 간의 스키마 드리프트를 자동으로 감지합니다. Kubernetes 환경에 경량 에이전트로 배포되어 기존 서비스의 변경 없이 마이크로서비스 전반의 스키마 일관성을 지속적으로 검증합니다.
+**gRPC 서비스를 업데이트하고 스키마 레지스트리 동기화를 깜빡하신 적 있나요?**
 
-### 주요 기능
+ProtoDiff가 그 악몽에서 구해드릴게요. 실행 중인 gRPC 서비스와 Buf Schema Registry(BSR) 사이의 스키마 드리프트를 자동으로 잡아내는 Kubernetes 네이티브 모니터링 도구입니다 - **프로덕션이 망가지기 전에** 말이죠.
 
-- **비침투적 설계**: 기존 마이크로서비스 변경 불필요 (사이드카 없음, YAML 수정 없음)
-- **시각적 대시보드**: kubectl port-forward로 접근 가능한 내장 HTML 대시보드
-- **중앙 집중식 설정**: ConfigMap을 통한 서비스-BSR 매핑 관리
-- **자동 발견**: Kubernetes 레이블을 사용한 gRPC Pod 발견
-- **gRPC Reflection**: 서버 리플렉션을 사용한 라이브 스키마 가져오기
-- **실시간 모니터링**: 설정 가능한 스캔 간격의 지속적인 검증
-- **명확한 상태 표시**: 신호등 UI (녹색=동기화, 빨강=불일치, 노랑=알 수 없음)
+**스키마 일관성 수호자**라고 생각하시면 돼요: 클러스터에 상주하면서 마이크로서비스를 계속 검증하고, 뭔가 동기화가 안 되는 순간 즉시 알려드려요. 사이드카도 필요 없고, 코드 수정도 필요 없고, 골치 아픈 것도 없어요 - 그냥 배포하고 잊으시면 됩니다.
 
-### 사전 요구사항
+### 왜 좋아하실 거예요
 
-- Kubernetes 클러스터 (v1.25+)
-- kubectl 설정 완료
-- 서버 리플렉션이 활성화된 gRPC 서비스
-- **BSR 토큰** (BSR 스키마 검증에 필요)
-  - https://buf.build 에서 가입
-  - https://buf.build/settings/user 에서 토큰 생성
-  - "Create Token" 클릭 후 안전하게 보관
-  - **참고**: 퍼블릭 BSR 모듈은 토큰 없이 접근 가능
+- 🚀 **제로 터치 배포**: 사이드카도, 서비스 변경도, 코드 수정도 필요 없어요 - 그냥 배포하면 작동해요
+- 📊 **한눈에 보는 대시보드**: 깔끔한 웹 UI로 모든 서비스를 한눈에 확인
+- ⚙️ **초간단 설정**: ConfigMap 하나로 서비스를 BSR 모듈에 매핑 - 끝!
+- 🔍 **자동 발견**: 클러스터를 가리키면 모든 gRPC 서비스를 자동으로 찾아요
+- ⚡ **실시간 알림**: 30초 안에 스키마 드리프트를 알 수 있어요 (설정 가능)
+- 🎯 **명확한 상태**: 신호등 표시 - 초록색 (✓ 동기화), 빨강 (✗ 드리프트), 노랑 (? 알 수 없음)
+- 🔧 **프로덕션 준비 완료**: 멀티 아키텍처 지원 (AMD64/ARM64), 실제 클러스터에서 검증됨
+
+### 필요한 것들
+
+- **Kubernetes 클러스터** (v1.25 이상)
+- **kubectl** 설정 완료 및 정상 작동
+- **서버 reflection이 켜진 gRPC 서비스** (대부분의 프레임워크가 지원해요)
+- **BSR 토큰** (프라이빗 스키마용 - 퍼블릭 모듈은 토큰 없이도 돼요)
+  - https://buf.build/settings/user 에서 무료로 받으세요
+  - 30초면 만들 수 있어요
+  - **꿀팁**: 퍼블릭 모듈로 테스트하신다고요? 토큰 건너뛰셔도 됩니다!
 
 ### 빠른 시작
 
-#### 1. BSR 토큰 발급
+> **먼저 체험해보고 싶으신가요?** [**원 커맨드 데모**](examples/SAMPLE_QUICKSTART.md)를 확인하세요 - 60초면 모든 설정이 끝나요!
 
-https://buf.build/settings/user 에 방문하여 API 토큰을 생성합니다. 안전하게 보관하세요 - 3단계에서 필요합니다.
+#### 1. BSR 토큰 받기 (퍼블릭 모듈은 선택사항)
 
-#### 2. 다운로드 및 서비스 매핑 설정
+https://buf.build/settings/user 에서 무료 API 토큰을 받으세요 - 30초 걸려요. 퍼블릭 BSR 모듈로 테스트하신다고요? 이 단계는 건너뛰세요!
 
-설치 매니페스트 다운로드:
+#### 2. 다운로드 & 설정
+
+설치 매니페스트를 받아오세요:
 
 ```bash
 curl -O https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.yaml
 ```
 
-ConfigMap 섹션을 편집하여 서비스를 BSR 모듈에 매핑:
+파일을 열어서 서비스를 설정하세요 (69-71번째 줄 근처):
 
 ```bash
-vi install.yaml  # 또는 원하는 에디터 사용
+vi install.yaml
 ```
 
-**서비스 매핑 설정** (69-71번째 줄 근처):
+ProtoDiff에게 어떤 서비스를 모니터링할지 알려주세요:
 ```yaml
 data:
-  user-service: "buf.build/acme/user"        # 실제 서비스로 교체
-  order-service: "buf.build/acme/order"      # 필요한 만큼 추가
+  user-service: "buf.build/acme/user"        # 여러분의 서비스 → BSR 모듈
+  order-service: "buf.build/acme/order"      # 필요한 만큼 추가하세요
   payment-service: "buf.build/acme/payment"
 ```
 
@@ -535,57 +551,63 @@ ports:
 
 ### 문제 해결
 
-#### 서비스가 발견되지 않음
+#### 서비스가 안 보여요
 
-**문제**: 대시보드에 "No gRPC services discovered yet" 표시
+**증상**: 대시보드에 "No gRPC services discovered yet"라고 떠요
 
-**해결 방법**:
-- ConfigMap에 서비스가 나열되어 있는지 확인: `kubectl get configmap protodiff-mapping -n protodiff-system -o yaml`
-- 서비스 Pod에 ConfigMap의 서비스명과 일치하는 `app` 레이블이 있는지 확인
-- ProtoDiff 로그 확인: `kubectl logs -n protodiff-system -l app.kubernetes.io/name=protodiff`
-- Pod가 `Running` 상태인지 확인
+**해결책**:
+- ConfigMap에 서비스가 제대로 들어갔는지 확인: `kubectl get configmap protodiff-mapping -n protodiff-system -o yaml`
+- 서비스 Pod에 ConfigMap의 이름과 같은 `app` 레이블이 있는지 확인하세요
+- ProtoDiff 로그를 확인해보세요: `kubectl logs -n protodiff-system -l app.kubernetes.io/name=protodiff`
+- Pod가 `Running` 상태인지 체크!
 
-#### 스키마 가져오기 실패
+#### 스키마를 못 가져와요
 
-**문제**: 상태가 "UNKNOWN"으로 표시되고 오류 메시지 발생
+**증상**: 상태가 "UNKNOWN"이고 에러 메시지가 나와요
 
-**해결 방법**:
-- 서비스에서 gRPC 리플렉션이 활성화되어 있는지 확인
-- ProtoDiff Pod에서 Pod IP에 접근 가능한지 확인
-- gRPC 포트가 올바른지 확인 (containerPort에서 자동 감지 또는 기본값 9090)
-- "Connection refused" 오류는 로그에서 확인
+**해결책**:
+- 서비스에 gRPC reflection이 켜져 있는지 확인하세요
+- ProtoDiff Pod에서 서비스 Pod IP에 접근할 수 있는지 확인
+- gRPC 포트가 맞는지 확인 (containerPort에서 자동 감지하거나 기본값 9090)
+- "Connection refused" 에러가 있는지 로그 확인
 
-#### BSR Export 실패
+#### BSR Export가 실패해요
 
-**문제**: "buf export failed: read-only file system"
+**증상**: "buf export failed: read-only file system" 에러
 
-**해결 방법**: 최신 배포 매니페스트에서 이미 수정되었습니다. 배포에는 다음이 포함됩니다:
+**해결책**: 최신 배포 매니페스트에서 이미 고쳐졌어요. 다음이 포함되어 있습니다:
 - 쓰기 가능한 `/tmp` 볼륨 마운트 (`emptyDir`)
-- buf CLI 캐시를 위한 `HOME=/tmp` 환경 변수
+- buf CLI 캐시용 `HOME=/tmp` 환경 변수
 
-이전 매니페스트를 사용 중이라면 업데이트하세요:
+예전 매니페스트 쓰고 계시면 업데이트하세요:
 ```bash
 curl -O https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.yaml
 kubectl apply -f install.yaml
 ```
 
-#### BSR 매핑을 찾을 수 없음
+#### BSR 매핑을 못 찾겠어요
 
-**문제**: "No BSR module mapping found" 메시지
+**증상**: "No BSR module mapping found" 메시지
 
-**해결 방법**:
-- `protodiff-mapping` ConfigMap에 서비스 매핑 추가
-- `DEFAULT_BSR_TEMPLATE` 환경 변수 설정
-- ConfigMap 변경 후 ProtoDiff Pod 재시작: `kubectl rollout restart deployment/protodiff -n protodiff-system`
+**해결책**:
+- `protodiff-mapping` ConfigMap에 서비스 매핑을 추가하세요
+- `DEFAULT_BSR_TEMPLATE` 환경 변수를 설정하세요
+- ConfigMap 바꾼 후엔 ProtoDiff Pod 재시작: `kubectl rollout restart deployment/protodiff -n protodiff-system`
 
-### 기여
+### 기여하기
 
-기여를 환영합니다! 자세한 내용은 [CONTRIBUTING.md](CONTRIBUTING.md)를 참조하세요.
+여러분의 기여를 환영해요! 버그를 찾으셨거나 멋진 아이디어가 있으신가요? [CONTRIBUTING.md](CONTRIBUTING.md)를 확인해주세요.
+
+**도움이 되셨다면** ⭐ 스타 하나 눌러주시면 정말 감사하겠습니다!
 
 ### 라이선스
 
-이 프로젝트는 Apache License 2.0에 따라 라이선스가 부여됩니다. 자세한 내용은 [LICENSE](LICENSE)를 참조하세요.
+이 프로젝트는 Apache License 2.0으로 배포됩니다. 자유롭게 사용하세요! 자세한 내용은 [LICENSE](LICENSE)를 참고하세요.
 
 ### 연락처
 
-- GitHub Issues: https://github.com/uzdada/protodiff/issues
+- 이슈/질문/제안: https://github.com/uzdada/protodiff/issues
+
+---
+
+**ProtoDiff가 여러분의 마이크로서비스를 안전하게 지켜드릴게요!** 🛡️

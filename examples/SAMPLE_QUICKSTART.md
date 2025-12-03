@@ -1,4 +1,4 @@
-# gRPC Test Services Quick Start Guide
+# ProtoDiff Demo - Quick Start Guide
 
 [English](#english) | [한국어](#korean)
 
@@ -6,26 +6,23 @@
 
 ## English
 
-### Overview
+### 🎯 What You'll Get
 
-This example demonstrates **two gRPC services communicating with each other** in a Kubernetes cluster:
+Experience **ProtoDiff in action** with just one command! This demo sets up:
 
-- **Go Greeter Service** (Port 9090): A greeting service that provides personalized greetings
-- **Java UserService** (Port 9091): A user management service with in-memory storage
+- **Two sample gRPC services** (Go + Java) that communicate with each other
+- **ProtoDiff monitoring** to track schema drift in real-time
+- **Live dashboard** showing schema validation status
 
-**Communication Flow:**
+**Ready to see it work?** You're 60 seconds away from a running demo.
+
+### Communication Flow
 ```
 Client → Go Greeter Service → Java UserService
          (SayHelloToUser)      (GetUser)
 ```
 
-When you call `SayHelloToUser(user_id)` on the Go service, it:
-1. Receives the user ID from the client
-2. Calls Java UserService's `GetUser(user_id)` to fetch user details
-3. Creates a personalized greeting with the user's information
-4. Returns the greeting to the client
-
-This setup is designed to work with **ProtoDiff** for monitoring schema drift between your gRPC services and the Buf Schema Registry.
+The Go service fetches user data from Java service to create personalized greetings - a perfect example of microservice communication that ProtoDiff can monitor!
 
 ### Architecture
 
@@ -65,356 +62,157 @@ This setup is designed to work with **ProtoDiff** for monitoring schema drift be
 
 ### Prerequisites
 
-- Kubernetes cluster (minikube, kind, or cloud provider)
-- `kubectl` configured to access your cluster
-- `grpcurl` for testing (optional but recommended)
+- **Kubernetes cluster** (minikube, kind, Docker Desktop, or any cloud provider)
+- **kubectl** configured and connected to your cluster
 
-**Install grpcurl:**
+That's it! The demo script handles everything else.
+
+### 🚀 Quick Start (One Command!)
+
+Clone the repository and run the automated demo:
+
 ```bash
-# macOS
-brew install grpcurl
-
-# Linux
-go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
-
-# Or download from: https://github.com/fullstorydev/grpcurl/releases
+git clone https://github.com/uzdada/protodiff.git
+cd protodiff/examples
+./demo.sh
 ```
 
-### Quick Start
+**What happens automatically:**
+1. ✅ Deploys two gRPC test services (Go + Java)
+2. ✅ Deploys ProtoDiff monitoring agent
+3. ✅ Waits for all pods to be ready
+4. ✅ Sets up port-forwarding
+5. ✅ Opens the dashboard in your browser
 
-#### 1. Deploy the Services
+In about 60 seconds, you'll see the **ProtoDiff dashboard** showing real-time schema validation!
 
-```bash
-# Navigate to the examples directory
-cd examples
+**Dashboard URL:** http://localhost:18080
 
-# Apply the Kubernetes manifests
-kubectl apply -f sample-grpc-service.yaml
-```
+Press `Ctrl+C` when you're done to clean up all port-forwards.
 
-This creates:
-- Namespace `grpc-test`
-- Two Deployments (grpc-server-go and grpc-server-java)
-- Two Services (ClusterIP)
+### 🧪 Try It Out!
 
-#### 2. Verify Deployment
+The demo script already set up port-forwarding for you. Here are some quick tests:
 
-```bash
-# Check if pods are running
-kubectl get pods -n grpc-test
-
-# Expected output:
-# NAME                                READY   STATUS    RESTARTS   AGE
-# grpc-server-go-xxxxxxxxxx-xxxxx     1/1     Running   0          30s
-# grpc-server-java-xxxxxxxxxx-xxxxx   1/1     Running   0          30s
-
-# Check services
-kubectl get svc -n grpc-test
-
-# Check pods with grpc-service label (these are discovered by ProtoDiff)
-kubectl get pods -n grpc-test -l grpc-service=true
-```
-
-#### 3. Test the Services
-
-**Option A: Test Go Greeter Service (Standalone)**
+**Test inter-service communication** (Go → Java):
 
 ```bash
-# Port-forward Go service
-kubectl port-forward -n grpc-test svc/grpc-server-go 9090:9090
-
-# In another terminal, list available services
-grpcurl -plaintext localhost:9090 list
-
-# Call SayHello
-grpcurl -plaintext -d '{"name": "World"}' localhost:9090 greeter.Greeter/SayHello
-
-# Expected response:
-# {
-#   "message": "Hello World from Go server!"
-# }
-
-# Call SayHelloAgain
-grpcurl -plaintext -d '{"name": "Alice"}' localhost:9090 greeter.Greeter/SayHelloAgain
-
-# Expected response:
-# {
-#   "message": "Hello again Alice from Go server!"
-# }
-```
-
-**Option B: Test Java UserService (Standalone)**
-
-```bash
-# Port-forward Java service
-kubectl port-forward -n grpc-test svc/grpc-server-java 9091:9091
-
-# In another terminal, list available services
-grpcurl -plaintext localhost:9091 list
-
-# Get user by ID (sample users: 1=admin, 2=user1, 3=user2)
-grpcurl -plaintext -d '{"user_id": 1}' localhost:9091 user.UserService/GetUser
-
-# Expected response:
-# {
-#   "userId": 1,
-#   "username": "admin",
-#   "email": "admin@example.com",
-#   "createdAt": "1733024832123"
-# }
-
-# Create a new user
-grpcurl -plaintext -d '{"username": "john", "email": "john@example.com"}' \
-  localhost:9091 user.UserService/CreateUser
-
-# List all users
-grpcurl -plaintext -d '{"page_size": 10, "page_number": 1}' \
-  localhost:9091 user.UserService/ListUsers
-```
-
-**Option C: Test Inter-Service Communication** ⭐
-
-This is the main feature - Go service calling Java service!
-
-```bash
-# Port-forward Go service
-kubectl port-forward -n grpc-test svc/grpc-server-go 9090:9090
-
-# In another terminal, call SayHelloToUser
-# This will make Go service call Java service internally
+# The Go service will call Java service to fetch user data
 grpcurl -plaintext -d '{"user_id": 1}' localhost:9090 greeter.Greeter/SayHelloToUser
 
-# Expected response (personalized greeting with user data from Java service):
-# {
-#   "message": "Hello admin (ID: 1, Email: admin@example.com)! Greetings from Go Greeter Service!"
-# }
-
-# Try with different user IDs
-grpcurl -plaintext -d '{"user_id": 2}' localhost:9090 greeter.Greeter/SayHelloToUser
-grpcurl -plaintext -d '{"user_id": 3}' localhost:9090 greeter.Greeter/SayHelloToUser
-
-# Try with non-existent user (will return error)
-grpcurl -plaintext -d '{"user_id": 999}' localhost:9090 greeter.Greeter/SayHelloToUser
+# Response: "Hello admin (ID: 1, Email: admin@example.com)! Greetings from Go Greeter Service!"
 ```
 
-#### 4. View Service Logs
+**Simple greeting:**
 
 ```bash
-# Go service logs
-kubectl logs -n grpc-test -l app=grpc-server-go -f
-
-# You'll see logs like:
-# Go gRPC server listening at [::]:9090
-# Received SayHelloToUser request: user_id=1
-# Successfully greeted user: admin
-
-# Java service logs
-kubectl logs -n grpc-test -l app=grpc-server-java -f
-
-# You'll see logs like:
-# Java gRPC server started, listening on port 9091
-# GetUser called for userId: 1
+grpcurl -plaintext -d '{"name": "World"}' localhost:9090 greeter.Greeter/SayHello
+# Response: "Hello World from Go server!"
 ```
 
-### Integration with ProtoDiff
-
-These test services are designed to work seamlessly with ProtoDiff for schema monitoring. The schemas are already published to a **public BSR repository** at `buf.build/proto-diff-bsr/test-services`, so you can test ProtoDiff without setting up your own BSR account.
-
-#### 1. Deploy ProtoDiff
-
-Download the installation manifest:
+**Get user directly from Java service:**
 
 ```bash
-curl -O https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.yaml
+grpcurl -plaintext -d '{"user_id": 1}' localhost:9091 user.UserService/GetUser
+# Returns user details: admin@example.com
 ```
 
-Edit the ConfigMap section to configure the test services:
+> **Note:** If `grpcurl` is not installed, skip these tests and just explore the dashboard!
+
+### 📊 Understanding the Dashboard
+
+Open **http://localhost:18080** (the demo script should have opened it automatically).
+
+You'll see both test services with their schema validation status:
+
+**Expected Dashboard View:**
+
+| Service | Status | BSR Module | What It Means |
+|---------|--------|------------|---------------|
+| **grpc-server-go** | 🟢 IN_SYNC | `buf.build/proto-diff-bsr/test-services` | Schema matches! |
+| **grpc-server-java** | 🟢 IN_SYNC | `buf.build/proto-diff-bsr/test-services` | Schema matches! |
+
+**Status Indicators:**
+- 🟢 **Green (IN_SYNC)**: Your deployed service matches the BSR schema - perfect!
+- 🔴 **Red (MISMATCH)**: Uh-oh! Schema drift detected - time to sync
+- 🟡 **Yellow (UNKNOWN)**: Can't verify (check if service is running)
+
+**What's Happening Behind the Scenes:**
+
+ProtoDiff is continuously (every 30 seconds):
+1. Using gRPC reflection to fetch live schemas from your running pods
+2. Comparing them against schemas in Buf Schema Registry
+3. Alerting you immediately when they diverge
+
+This keeps your documentation (BSR) perfectly synced with your actual deployments - **no more "the docs are outdated" moments**!
+
+> **Fun fact:** The test schemas are already published at https://buf.build/proto-diff-bsr/test-services as a public BSR module, so you can try this demo without any BSR account setup!
+
+### 🧹 Cleanup
+
+Press `Ctrl+C` in the terminal where `demo.sh` is running - it automatically cleans up all port-forwards!
+
+To completely remove the demo:
 
 ```bash
-vi install.yaml  # or use your preferred editor
+kubectl delete namespace grpc-test
+kubectl delete namespace protodiff-system
 ```
 
-Find the ConfigMap section (around line 69-71) and add:
+### 🚀 What's Next?
 
-```yaml
-data:
-  grpc-server-go: "buf.build/proto-diff-bsr/test-services"
-  grpc-server-java: "buf.build/proto-diff-bsr/test-services"
-```
+Now that you've seen ProtoDiff in action, here's how to use it with **your own services**:
 
-Deploy ProtoDiff:
+1. **Deploy ProtoDiff** to your cluster ([see main README](../README.md))
+2. **Configure service mappings** in the ConfigMap to point to your BSR modules
+3. **Watch the magic happen** - ProtoDiff will automatically discover and monitor your gRPC services
 
-```bash
-kubectl apply -f install.yaml
-```
+**Want to experiment more?**
+- Try modifying the proto files and redeploying to see schema drift detection
+- Add your own gRPC services following the same pattern
+- Explore the detailed logs: `kubectl logs -n protodiff-system -l app.kubernetes.io/name=protodiff -f`
 
-Verify deployment:
+### 💡 Why This Matters
 
-```bash
-kubectl get pods -n protodiff-system
-# Expected: protodiff pod running
-```
+Schema drift is a **silent killer** in microservices:
+- Deploy a new service version without updating BSR → clients break
+- Update proto files but forget to push to BSR → documentation is wrong
+- Services drift apart over time → integration nightmares
 
-**Note**: The schemas are already published at https://buf.build/proto-diff-bsr/test-services - you don't need to push anything!
+ProtoDiff solves this by **continuously validating** that your running services match your source of truth. Think of it as a **smoke detector for schema drift** - catching problems before they become fires.
 
-#### 2. Verify ProtoDiff Discovery
+### 📚 Learn More
 
-Check that ProtoDiff discovered your test services:
+- **Main Documentation**: [../README.md](../README.md) - Production deployment guide
+- **ProtoDiff GitHub**: https://github.com/uzdada/protodiff - Star us if this helps!
+- **Buf Schema Registry**: https://buf.build - Where your schemas live
+- **Architecture Deep Dive**: [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
-```bash
-# Check ProtoDiff logs
-kubectl logs -n protodiff-system -l app=protodiff -f
+---
 
-# You should see logs like:
-# Discovered gRPC service: grpc-server-go in namespace grpc-test
-# Discovered gRPC service: grpc-server-java in namespace grpc-test
-# Fetching schema for grpc-server-go...
-# Comparing with BSR module: buf.build/proto-diff-bsr/test-services
-```
-
-#### 3. Access ProtoDiff Dashboard
-
-```bash
-kubectl port-forward -n protodiff-system svc/protodiff 18080:80
-```
-
-Open http://localhost:18080 in your browser. You should see:
-
-- **grpc-server-go**
-  - Status: 🟢 Green (if schema matches BSR)
-  - BSR Module: `buf.build/proto-diff-bsr/test-services`
-  - Services: `greeter.Greeter`
-
-- **grpc-server-java**
-  - Status: 🟢 Green (if schema matches BSR)
-  - BSR Module: `buf.build/proto-diff-bsr/test-services`
-  - Services: `user.UserService`
-
-**Status Meanings:**
-- 🟢 **Green (IN_SYNC)**: Live schema matches BSR - all good!
-- 🔴 **Red (MISMATCH)**: Schema drift detected - update needed
-- 🟡 **Yellow (UNKNOWN)**: Can't fetch schema or BSR module not found
-
-**Note on Port Detection:**
-ProtoDiff automatically detects gRPC ports from your pod's container specifications:
-- Go service: Port 9090 (auto-detected from containerPort)
-- Java service: Port 9091 (auto-detected from containerPort)
-- No manual configuration needed!
-
-#### 4. Understanding the Dashboard
-
-The dashboard shows the current status of schema synchronization. For these test services, you should see:
-
-- 🟢 **Green (IN_SYNC)**: The deployed service schemas match the BSR schemas
-- Both services pointing to the same BSR module: `buf.build/proto-diff-bsr/test-services`
-
-**What ProtoDiff is Checking:**
-
-ProtoDiff continuously monitors your deployed gRPC services by:
-1. Using gRPC reflection to fetch the live schemas from your running pods
-2. Comparing them against the schemas stored in BSR
-3. Alerting you when they drift apart
-
-This ensures your documentation (BSR) stays synchronized with your actual deployments!
-
-### Cleanup
-
-```bash
-# Delete the test services
-kubectl delete -f sample-grpc-service.yaml
-
-# This removes:
-# - grpc-test namespace
-# - All deployments, services, and pods
-```
-
-### Troubleshooting
-
-#### Pods Not Starting
-
-```bash
-# Check pod events
-kubectl describe pod -n grpc-test <pod-name>
-
-# Common issues:
-# - ImagePullBackOff: Check if images are accessible from Docker Hub
-# - CrashLoopBackOff: Check logs with kubectl logs
-# - ARM64/AMD64 compatibility: Images are now built for both architectures
-```
-
-#### Health Check Failures
-
-**Fixed**: Health checks now use `tcpSocket` probes instead of exec commands with netcat. This works across all container environments without requiring additional utilities.
-
-```yaml
-livenessProbe:
-  tcpSocket:
-    port: 9090  # or 9091 for Java service
-```
-
-#### Connection Refused Between Services
-
-```bash
-# Verify service DNS resolution
-kubectl run -it --rm debug --image=busybox --restart=Never -n grpc-test -- sh
-
-# Inside the pod:
-nslookup grpc-server-java.grpc-test.svc.cluster.local
-nslookup grpc-server-go.grpc-test.svc.cluster.local
-
-# Test connectivity
-nc -zv grpc-server-java.grpc-test.svc.cluster.local 9091
-```
-
-#### gRPC Call Failures
-
-```bash
-# Check if gRPC reflection is enabled
-grpcurl -plaintext localhost:9090 list
-
-# If you see "Failed to list services", reflection might not be enabled
-# Check the server logs for errors
-```
-
-### Next Steps
-
-- **Monitor Schema Drift**: Use ProtoDiff to detect when your deployed services diverge from BSR
-- **Add More Services**: Create additional gRPC services following the same pattern
-- **Customize Protos**: Modify the proto definitions and redeploy to see ProtoDiff detect changes
-- **Production Deployment**: Adapt these examples for your production environment
-
-### Resources
-
-- **Main Documentation**: [../README.md](../README.md)
-- **Go Server Source**: See `grpc-server-go/` directory in parent folder
-- **Java Server Source**: See `grpc-server-java/` directory in parent folder
-- **ProtoDiff GitHub**: https://github.com/uzdada/protodiff
-- **Buf Schema Registry**: https://buf.build
+**Found this useful?** ⭐ Star the repo and share with your team!
 
 ---
 
 ## Korean
 
-### 개요
+### 🎯 무엇을 경험하게 되나요?
 
-이 예제는 **Kubernetes 클러스터에서 서로 통신하는 두 개의 gRPC 서비스**를 보여줍니다:
+단 하나의 명령어로 **ProtoDiff를 직접 체험**해보세요! 이 데모는 다음을 자동으로 설정합니다:
 
-- **Go Greeter Service** (포트 9090): 개인화된 인사말을 제공하는 서비스
-- **Java UserService** (포트 9091): 인메모리 저장소를 사용하는 사용자 관리 서비스
+- **두 개의 샘플 gRPC 서비스** (Go + Java)가 서로 통신
+- **실시간 스키마 드리프트 추적**을 위한 ProtoDiff 모니터링
+- **스키마 검증 상태**를 보여주는 라이브 대시보드
 
-**통신 흐름:**
+**지금 바로 시작할 준비 되셨나요?** 60초면 실행 중인 데모를 확인할 수 있어요.
+
+### 통신 흐름
 ```
 클라이언트 → Go Greeter Service → Java UserService
             (SayHelloToUser)      (GetUser)
 ```
 
-Go 서비스에서 `SayHelloToUser(user_id)`를 호출하면:
-1. 클라이언트로부터 사용자 ID를 받습니다
-2. Java UserService의 `GetUser(user_id)`를 호출하여 사용자 정보를 가져옵니다
-3. 사용자 정보를 포함한 개인화된 인사말을 생성합니다
-4. 클라이언트에게 인사말을 반환합니다
-
-이 구성은 gRPC 서비스와 Buf Schema Registry 간의 스키마 드리프트를 모니터링하기 위한 **ProtoDiff**와 함께 작동하도록 설계되었습니다.
+Go 서비스가 Java 서비스에서 사용자 데이터를 가져와서 개인화된 인사말을 만들어요 - ProtoDiff가 모니터링할 수 있는 완벽한 마이크로서비스 통신 예제입니다!
 
 ### 아키텍처
 
@@ -454,311 +252,132 @@ Go 서비스에서 `SayHelloToUser(user_id)`를 호출하면:
 
 ### 사전 요구사항
 
-- Kubernetes 클러스터 (minikube, kind, 또는 클라우드 제공자)
-- `kubectl` 클러스터 접근 설정 완료
-- `grpcurl` 테스트용 (선택사항이지만 권장)
+- **Kubernetes 클러스터** (minikube, kind, Docker Desktop, 또는 클라우드 서비스 아무거나)
+- **kubectl** 설정 완료 및 클러스터 연결됨
 
-**grpcurl 설치:**
+이게 전부예요! 나머지는 데모 스크립트가 알아서 처리합니다.
+
+### 🚀 빠른 시작 (명령어 하나로!)
+
+저장소를 클론하고 자동 데모를 실행하세요:
+
 ```bash
-# macOS
-brew install grpcurl
-
-# Linux
-go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
-
-# 또는 다운로드: https://github.com/fullstorydev/grpcurl/releases
+git clone https://github.com/uzdada/protodiff.git
+cd protodiff/examples
+./demo.sh
 ```
 
-### 빠른 시작
+**자동으로 진행되는 작업:**
+1. ✅ 두 개의 gRPC 테스트 서비스 배포 (Go + Java)
+2. ✅ ProtoDiff 모니터링 에이전트 배포
+3. ✅ 모든 Pod가 준비될 때까지 대기
+4. ✅ 포트 포워딩 설정
+5. ✅ 브라우저에서 대시보드 자동 오픈
 
-#### 1. 서비스 배포
+약 60초 후면 **실시간 스키마 검증**을 보여주는 ProtoDiff 대시보드를 확인할 수 있어요!
 
-```bash
-# examples 디렉토리로 이동
-cd examples
+**대시보드 URL:** http://localhost:18080
 
-# Kubernetes 매니페스트 적용
-kubectl apply -f sample-grpc-service.yaml
-```
+작업이 끝나면 `Ctrl+C`를 눌러서 모든 포트 포워딩을 정리하세요.
 
-다음이 생성됩니다:
-- 네임스페이스 `grpc-test`
-- 두 개의 Deployment (grpc-server-go와 grpc-server-java)
-- 두 개의 Service (ClusterIP)
+### 🧪 직접 테스트해보세요!
 
-#### 2. 배포 확인
+데모 스크립트가 이미 포트 포워딩을 설정해뒀어요. 간단한 테스트를 해볼까요:
 
-```bash
-# Pod 실행 상태 확인
-kubectl get pods -n grpc-test
-
-# 예상 출력:
-# NAME                                READY   STATUS    RESTARTS   AGE
-# grpc-server-go-xxxxxxxxxx-xxxxx     1/1     Running   0          30s
-# grpc-server-java-xxxxxxxxxx-xxxxx   1/1     Running   0          30s
-
-# 서비스 확인
-kubectl get svc -n grpc-test
-
-# grpc-service 레이블이 있는 Pod 확인 (ProtoDiff가 발견하는 대상)
-kubectl get pods -n grpc-test -l grpc-service=true
-```
-
-#### 3. 서비스 테스트
-
-**옵션 A: Go Greeter Service 테스트 (단독)**
+**서비스 간 통신 테스트** (Go → Java):
 
 ```bash
-# Go 서비스 포트 포워딩
-kubectl port-forward -n grpc-test svc/grpc-server-go 9090:9090
-
-# 다른 터미널에서 사용 가능한 서비스 목록 확인
-grpcurl -plaintext localhost:9090 list
-
-# SayHello 호출
-grpcurl -plaintext -d '{"name": "World"}' localhost:9090 greeter.Greeter/SayHello
-
-# 예상 응답:
-# {
-#   "message": "Hello World from Go server!"
-# }
-
-# SayHelloAgain 호출
-grpcurl -plaintext -d '{"name": "Alice"}' localhost:9090 greeter.Greeter/SayHelloAgain
-
-# 예상 응답:
-# {
-#   "message": "Hello again Alice from Go server!"
-# }
-```
-
-**옵션 B: Java UserService 테스트 (단독)**
-
-```bash
-# Java 서비스 포트 포워딩
-kubectl port-forward -n grpc-test svc/grpc-server-java 9091:9091
-
-# 다른 터미널에서 사용 가능한 서비스 목록 확인
-grpcurl -plaintext localhost:9091 list
-
-# ID로 사용자 조회 (샘플 사용자: 1=admin, 2=user1, 3=user2)
-grpcurl -plaintext -d '{"user_id": 1}' localhost:9091 user.UserService/GetUser
-
-# 예상 응답:
-# {
-#   "userId": 1,
-#   "username": "admin",
-#   "email": "admin@example.com",
-#   "createdAt": "1733024832123"
-# }
-
-# 새 사용자 생성
-grpcurl -plaintext -d '{"username": "john", "email": "john@example.com"}' \
-  localhost:9091 user.UserService/CreateUser
-
-# 모든 사용자 목록 조회
-grpcurl -plaintext -d '{"page_size": 10, "page_number": 1}' \
-  localhost:9091 user.UserService/ListUsers
-```
-
-**옵션 C: 서비스 간 통신 테스트** ⭐
-
-이것이 핵심 기능입니다 - Go 서비스가 Java 서비스를 호출합니다!
-
-```bash
-# Go 서비스 포트 포워딩
-kubectl port-forward -n grpc-test svc/grpc-server-go 9090:9090
-
-# 다른 터미널에서 SayHelloToUser 호출
-# Go 서비스가 내부적으로 Java 서비스를 호출합니다
+# Go 서비스가 Java 서비스를 호출해서 사용자 데이터를 가져옵니다
 grpcurl -plaintext -d '{"user_id": 1}' localhost:9090 greeter.Greeter/SayHelloToUser
 
-# 예상 응답 (Java 서비스에서 가져온 사용자 데이터로 개인화된 인사말):
-# {
-#   "message": "Hello admin (ID: 1, Email: admin@example.com)! Greetings from Go Greeter Service!"
-# }
-
-# 다른 사용자 ID로 시도
-grpcurl -plaintext -d '{"user_id": 2}' localhost:9090 greeter.Greeter/SayHelloToUser
-grpcurl -plaintext -d '{"user_id": 3}' localhost:9090 greeter.Greeter/SayHelloToUser
-
-# 존재하지 않는 사용자로 시도 (오류 반환)
-grpcurl -plaintext -d '{"user_id": 999}' localhost:9090 greeter.Greeter/SayHelloToUser
+# 응답: "Hello admin (ID: 1, Email: admin@example.com)! Greetings from Go Greeter Service!"
 ```
 
-#### 4. 서비스 로그 확인
+**간단한 인사말:**
 
 ```bash
-# Go 서비스 로그
-kubectl logs -n grpc-test -l app=grpc-server-go -f
-
-# 다음과 같은 로그가 표시됩니다:
-# Go gRPC server listening at [::]:9090
-# Received SayHelloToUser request: user_id=1
-# Successfully greeted user: admin
-
-# Java 서비스 로그
-kubectl logs -n grpc-test -l app=grpc-server-java -f
-
-# 다음과 같은 로그가 표시됩니다:
-# Java gRPC server started, listening on port 9091
-# GetUser called for userId: 1
+grpcurl -plaintext -d '{"name": "World"}' localhost:9090 greeter.Greeter/SayHello
+# 응답: "Hello World from Go server!"
 ```
 
-### ProtoDiff와 통합
-
-이 테스트 서비스는 스키마 모니터링을 위해 ProtoDiff와 원활하게 작동하도록 설계되었습니다. 스키마는 이미 `buf.build/proto-diff-bsr/test-services`의 **퍼블릭 BSR 리포지토리**에 게시되어 있으므로, 별도의 BSR 계정 설정 없이 ProtoDiff를 테스트할 수 있습니다.
-
-#### 1. ProtoDiff 배포
-
-설치 매니페스트 다운로드:
+**Java 서비스에서 직접 사용자 정보 가져오기:**
 
 ```bash
-curl -O https://raw.githubusercontent.com/uzdada/protodiff/main/deploy/k8s/install.yaml
+grpcurl -plaintext -d '{"user_id": 1}' localhost:9091 user.UserService/GetUser
+# 사용자 상세 정보 반환: admin@example.com
 ```
 
-ConfigMap 섹션을 편집하여 테스트 서비스 설정:
+> **참고:** `grpcurl`이 설치되어 있지 않다면 이 테스트는 건너뛰고 대시보드만 둘러보세요!
+
+### 📊 대시보드 살펴보기
+
+**http://localhost:18080**을 열어보세요 (데모 스크립트가 자동으로 열어줬을 거예요).
+
+두 테스트 서비스의 스키마 검증 상태를 확인할 수 있습니다:
+
+**예상되는 대시보드 화면:**
+
+| 서비스 | 상태 | BSR 모듈 | 의미 |
+|---------|--------|------------|------|
+| **grpc-server-go** | 🟢 IN_SYNC | `buf.build/proto-diff-bsr/test-services` | 스키마가 일치해요! |
+| **grpc-server-java** | 🟢 IN_SYNC | `buf.build/proto-diff-bsr/test-services` | 스키마가 일치해요! |
+
+**상태 표시 의미:**
+- 🟢 **초록색 (IN_SYNC)**: 배포된 서비스가 BSR 스키마와 완벽하게 일치 - 완벽해요!
+- 🔴 **빨간색 (MISMATCH)**: 앗! 스키마 드리프트가 감지됨 - 동기화할 시간이에요
+- 🟡 **노란색 (UNKNOWN)**: 검증할 수 없음 (서비스가 실행 중인지 확인해보세요)
+
+**무대 뒤에서 일어나는 일:**
+
+ProtoDiff는 계속해서 (30초마다):
+1. gRPC reflection을 사용해서 실행 중인 Pod에서 라이브 스키마를 가져와요
+2. Buf Schema Registry에 있는 스키마와 비교해요
+3. 차이가 생기면 즉시 알려드려요
+
+이렇게 하면 문서(BSR)가 실제 배포와 완벽하게 동기화된 상태를 유지할 수 있어요 - **"문서가 오래됐어요" 같은 말은 이제 안 해도 돼요**!
+
+> **꿀팁:** 테스트 스키마는 이미 https://buf.build/proto-diff-bsr/test-services 에 퍼블릭 BSR 모듈로 게시되어 있어서, BSR 계정 설정 없이도 이 데모를 바로 체험할 수 있어요!
+
+### 🧹 정리하기
+
+`demo.sh`가 실행 중인 터미널에서 `Ctrl+C`를 누르세요 - 모든 포트 포워딩이 자동으로 정리돼요!
+
+데모를 완전히 제거하려면:
 
 ```bash
-vi install.yaml  # 또는 원하는 에디터 사용
+kubectl delete namespace grpc-test
+kubectl delete namespace protodiff-system
 ```
 
-ConfigMap 섹션(69-71번째 줄 근처)을 찾아 추가:
+### 🚀 다음은 뭘 해볼까요?
 
-```yaml
-data:
-  grpc-server-go: "buf.build/proto-diff-bsr/test-services"
-  grpc-server-java: "buf.build/proto-diff-bsr/test-services"
-```
+ProtoDiff가 실제로 동작하는 걸 보셨으니, 이제 **여러분의 서비스**에 적용해볼 차례예요:
 
-ProtoDiff 배포:
+1. **ProtoDiff를 클러스터에 배포**하세요 ([메인 README 참고](../README.md))
+2. **ConfigMap에서 서비스 매핑을 설정**해서 여러분의 BSR 모듈을 가리키게 하세요
+3. **마법이 일어나는 걸 지켜보세요** - ProtoDiff가 자동으로 gRPC 서비스를 찾아서 모니터링해요
 
-```bash
-kubectl apply -f install.yaml
-```
+**더 실험해보고 싶으신가요?**
+- proto 파일을 수정하고 재배포해서 스키마 드리프트 감지를 확인해보세요
+- 같은 패턴으로 여러분만의 gRPC 서비스를 추가해보세요
+- 상세한 로그 확인: `kubectl logs -n protodiff-system -l app.kubernetes.io/name=protodiff -f`
 
-배포 확인:
+### 💡 왜 이게 중요할까요?
 
-```bash
-kubectl get pods -n protodiff-system
-# 예상: protodiff pod가 실행 중
-```
+스키마 드리프트는 마이크로서비스의 **조용한 살인자**예요:
+- BSR 업데이트 없이 새 서비스 버전 배포 → 클라이언트가 깨져요
+- proto 파일 업데이트했는데 BSR에 푸시 안 함 → 문서가 틀려요
+- 시간이 지나면서 서비스들이 따로 놀기 시작 → 통합 악몽
 
-**참고**: 스키마는 이미 https://buf.build/proto-diff-bsr/test-services 에 게시되어 있습니다 - 별도로 푸시할 필요가 없습니다!
+ProtoDiff는 실행 중인 서비스가 진실의 원천(BSR)과 일치하는지 **지속적으로 검증**해서 이 문제를 해결해요. **스키마 드리프트를 위한 화재 감지기**라고 생각하시면 돼요 - 불이 나기 전에 문제를 잡아내는 거죠.
 
-#### 2. ProtoDiff 발견 확인
+### 📚 더 알아보기
 
-ProtoDiff가 테스트 서비스를 발견했는지 확인:
+- **메인 문서**: [../README.md](../README.md) - 프로덕션 배포 가이드
+- **ProtoDiff GitHub**: https://github.com/uzdada/protodiff - 도움이 되셨다면 스타 부탁드려요!
+- **Buf Schema Registry**: https://buf.build - 스키마가 저장되는 곳
+- **아키텍처 심화**: [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
-```bash
-# ProtoDiff 로그 확인
-kubectl logs -n protodiff-system -l app=protodiff -f
+---
 
-# 다음과 같은 로그가 표시되어야 합니다:
-# Discovered gRPC service: grpc-server-go in namespace grpc-test
-# Discovered gRPC service: grpc-server-java in namespace grpc-test
-# Fetching schema for grpc-server-go...
-# Comparing with BSR module: buf.build/proto-diff-bsr/test-services
-```
-
-#### 3. ProtoDiff 대시보드 접속
-
-```bash
-kubectl port-forward -n protodiff-system svc/protodiff 18080:80
-```
-
-브라우저에서 http://localhost:18080을 엽니다. 다음이 표시됩니다:
-
-- **grpc-server-go**
-  - 상태: 🟢 녹색 (스키마가 BSR과 일치)
-  - BSR 모듈: `buf.build/proto-diff-bsr/test-services`
-  - 서비스: `greeter.Greeter`
-
-- **grpc-server-java**
-  - 상태: 🟢 녹색 (스키마가 BSR과 일치)
-  - BSR 모듈: `buf.build/proto-diff-bsr/test-services`
-  - 서비스: `user.UserService`
-
-**상태 의미:**
-- 🟢 **녹색 (IN_SYNC)**: 라이브 스키마가 BSR과 일치 - 정상!
-- 🔴 **빨강 (MISMATCH)**: 스키마 드리프트 감지 - 업데이트 필요
-- 🟡 **노랑 (UNKNOWN)**: 스키마를 가져올 수 없거나 BSR 모듈을 찾을 수 없음
-
-#### 4. 대시보드 이해하기
-
-대시보드는 스키마 동기화의 현재 상태를 보여줍니다. 이 테스트 서비스의 경우 다음을 볼 수 있습니다:
-
-- 🟢 **녹색 (IN_SYNC)**: 배포된 서비스 스키마가 BSR 스키마와 일치
-- 두 서비스 모두 동일한 BSR 모듈을 가리킴: `buf.build/proto-diff-bsr/test-services`
-
-**ProtoDiff가 확인하는 내용:**
-
-ProtoDiff는 배포된 gRPC 서비스를 다음과 같이 지속적으로 모니터링합니다:
-1. gRPC reflection을 사용하여 실행 중인 pod에서 라이브 스키마 가져오기
-2. BSR에 저장된 스키마와 비교
-3. 차이가 발생하면 알림
-
-이를 통해 문서(BSR)가 실제 배포와 동기화된 상태를 유지합니다!
-
-### 정리
-
-```bash
-# 테스트 서비스 삭제
-kubectl delete -f sample-grpc-service.yaml
-
-# 다음이 제거됩니다:
-# - grpc-test 네임스페이스
-# - 모든 deployment, service, pod
-```
-
-### 문제 해결
-
-#### Pod가 시작되지 않음
-
-```bash
-# Pod 이벤트 확인
-kubectl describe pod -n grpc-test <pod-name>
-
-# 일반적인 문제:
-# - ImagePullBackOff: Docker Hub에서 이미지에 접근할 수 있는지 확인
-# - CrashLoopBackOff: kubectl logs로 로그 확인
-```
-
-#### 서비스 간 연결 거부
-
-```bash
-# 서비스 DNS 해석 확인
-kubectl run -it --rm debug --image=busybox --restart=Never -n grpc-test -- sh
-
-# Pod 내부에서:
-nslookup grpc-server-java.grpc-test.svc.cluster.local
-nslookup grpc-server-go.grpc-test.svc.cluster.local
-
-# 연결 테스트
-nc -zv grpc-server-java.grpc-test.svc.cluster.local 9091
-```
-
-#### gRPC 호출 실패
-
-```bash
-# gRPC reflection이 활성화되어 있는지 확인
-grpcurl -plaintext localhost:9090 list
-
-# "Failed to list services"가 표시되면 reflection이 활성화되지 않았을 수 있음
-# 서버 로그에서 오류 확인
-```
-
-### 다음 단계
-
-- **스키마 드리프트 모니터링**: ProtoDiff를 사용하여 배포된 서비스가 BSR과 다를 때 감지
-- **더 많은 서비스 추가**: 동일한 패턴으로 추가 gRPC 서비스 생성
-- **Proto 커스터마이징**: proto 정의를 수정하고 재배포하여 ProtoDiff가 변경 사항을 감지하는지 확인
-- **프로덕션 배포**: 이 예제를 프로덕션 환경에 맞게 조정
-
-### 리소스
-
-- **메인 문서**: [../README.md](../README.md)
-- **Go 서버 소스**: 상위 폴더의 `grpc-server-go/` 디렉토리 참조
-- **Java 서버 소스**: 상위 폴더의 `grpc-server-java/` 디렉토리 참조
-- **ProtoDiff GitHub**: https://github.com/uzdada/protodiff
-- **Buf Schema Registry**: https://buf.build
+**유용하셨나요?** ⭐ 레포에 스타 주시고 팀원들과 공유해주세요!
